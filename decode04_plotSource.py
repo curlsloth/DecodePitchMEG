@@ -370,11 +370,6 @@ print('*** Right - Left ***')
 for c in label_list:
     for t in ['height','chroma']:
         temp_df = roi_df_melt[(roi_df_melt['Cortex']==c) &(roi_df_melt['Time']==t)]
-        # diff = np.array([x-y for x, y in zip(temp_df[temp_df['Hemisphere']=='L']['value'], temp_df[temp_df['Hemisphere']=='R']['value'])]).reshape(-1,1)
-        # T_obs, p_values, _ = mne.stats.permutation_t_test(diff, 
-        #                                 n_permutations='all', n_jobs=-1,verbose=None)
-        # if p_values<0.05:
-        #     print(c+'-'+t+' p-value: '+str(p_values))
         x = np.array(temp_df[temp_df['Hemisphere']=='R']['value'])
         y = np.array(temp_df[temp_df['Hemisphere']=='L']['value'])
         result=stats.ttest_rel(x,y)

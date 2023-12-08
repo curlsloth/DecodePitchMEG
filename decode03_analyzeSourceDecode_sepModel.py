@@ -52,9 +52,6 @@ timeAxis = np.round(np.arange(-0.2,0.505,0.005),3)
 file_folder = 'sourceSTC20230711_ico3_freqBands_shuffled/decodeSource20230711_RidgeCV/auditory_frontal_alpha10^(-2)-10^3_41grid_correctPitchCoefPattern/'
 
 
-scores_FK_all = []
-scores_FS_all = []
-scores_KS_all = []
 scores_pitch_all = []
 score_tempGen_pitch_all = []
 
@@ -360,28 +357,24 @@ ax2 = fig.add_subplot(gs[0,:])
 cmap = plt.get_cmap('twilight')
 norm = Normalize(vmin=min(t_loc), vmax=max(t_loc)+0.03)
 
-for t, z in zip(t_loc, zorder):
-    t = round(t,2)
+for t_model, z in zip(t_loc, zorder):
+    t_model = round(t_model,2)
     y = []
-    coefs = df_fe.loc[t]
-    if (t>=0.29) and (t<=0.32):
+    coefs = df_fe.loc[t_model]
+    if (t_model>=0.29) and (t_model<=0.32):
         for n in range(len(x1)):
             y.append(coefs['Intercept'] + coefs['pitchDist']*x1[n] + coefs['samePitch[T.True]']*x2[n] + coefs['pitchDist:samePitch[T.True]']*x1[n]*x2[n])
-    # elif (t<=0.1) or (t>0.4):
-    #     for n in range(len(x1)):
-    #         y.append(coefs['Intercept'])
     else:
         for n in range(len(x1)):
             y.append(coefs['Intercept'] + coefs['pitchDist']*x1[n])
-    colors = cmap(norm(t))
+    colors = cmap(norm(t_model))
     
-    ax1.plot(x1, y, color=colors, label=str(t), zorder=z, linestyle='-', lw=1)
+    ax1.plot(x1, y, color=colors, label=str(t_model), zorder=z, linestyle='-', lw=1)
     ax1.scatter(x1, y, facecolors='none', edgecolors=colors, s=20, lw=1)
     ax1.scatter([1,2], [y[i] for i in [2,5]], facecolors=colors, edgecolors=colors, zorder=0, s=20)
     legend_elements = [ax1.scatter([0], [0.5], marker='o', color='k', label='True'),
                        ax1.scatter([0], [0.5], marker='o', color='k', label='False', facecolor='none')]
-
-    ax1.text(x1[-1]+0.07, y[-1], 't='+str(t)+'s', fontsize=6, verticalalignment='center', color=colors)
+    ax1.text(x1[-1]+0.07, y[-1], 't='+str(t_model)+'s', fontsize=6, verticalalignment='center', color=colors)
 # Create the plot
 
 

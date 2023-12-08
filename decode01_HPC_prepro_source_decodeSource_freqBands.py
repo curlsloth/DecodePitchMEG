@@ -59,11 +59,6 @@ elif freq_num==4:
 elif freq_num==0:
     freq_bands = {'gamma': (25,40)}
   
-# freq_bands = {'delta': (0.5,4),
-#               'theta': (4,8),
-#               'alpha': (8,13),
-#               'beta': (13,25),
-#               'gamma': (25,40)}
 
 output_dir = 'sourceSTC20230711_ico3_freqBands_shuffled/decodeSource20230711_RidgeCV/auditory_frontal_alpha10^(-2)-10^3_41grid_correctPitchCoefPattern/'
 
