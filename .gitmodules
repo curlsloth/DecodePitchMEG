@@ -1,0 +1,3 @@
+[submodule "pycochleagram"]
+	path = pycochleagram
+	url = https://github.com/mcdermottLab/pycochleagram
