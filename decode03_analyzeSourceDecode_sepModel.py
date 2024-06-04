@@ -527,13 +527,13 @@ df_fe = pd.read_csv('sourceSTC20230711_ico3_freqBands_shuffled/decodeSource20230
 x1 = [1/3, 2/3, 1, 4/3, 5/3, 2, 7/3]
 x2 = [0, 0, 1, 0, 0, 1, 0]
 t_loc = np.linspace(0, 0.5, 6)
-
+t_loc = np.linspace(0, 0.5, 51) # for animation use only
 
 for t_model in t_loc:
-    t_model = round(t_model,2)
+    t_model = round(t_model,3)
     y = []
     coefs = df_fe.loc[t_model]
-    if (t_model>=0.29) and (t_model<=0.32):
+    if (t_model>=0.30) and (t_model<=0.32):
         for n in range(len(x1)):
             y.append(coefs['Intercept'] + coefs['pitchDist']*x1[n] + coefs['samePitch[T.True]']*x2[n] + coefs['pitchDist:samePitch[T.True]']*x1[n]*x2[n])
     else:
@@ -542,7 +542,7 @@ for t_model in t_loc:
     
     distances = y
     plot_mds(distances, t_model)
-    # plt.savefig('time'+str(t_model)+'.png', format='png', dpi=600)
+    plt.savefig('time'+str(int(t_model*1000))+'ms.png', format='png', dpi=600)
 
-
+plt.close('all')
 
