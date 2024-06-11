@@ -605,8 +605,9 @@ def plot_manual_3Dmds(distances, t_model):
     
     # Create a 3D scatter plot
     plt.style.use('seaborn-notebook')
-    fig = plt.figure(figsize=(5, 5))
+    fig = plt.figure(figsize=(4, 5))
     ax = fig.add_subplot(111, projection='3d')
+    ax.set_box_aspect([1, 1, 1.7])
 
     # Plot the points
     ax.scatter(x, y, z, c=[1,2,3,1,2,3,1,2], label='Points')
@@ -625,9 +626,13 @@ def plot_manual_3Dmds(distances, t_model):
     ax.set_xlim([-0.01,0.01])
     ax.set_ylim([-0.01,0.01])
     ax.set_zlim([0,0.05])
+    ax.set_xticks([-0.01,-0.005,0,0.005,0.01])
+    ax.set_yticks([-0.01,-0.005,0,0.005,0.01])
+    ax.set_zticks([0,0.01,0.02,0.03,0.04,0.05])
     ax.set_xticklabels([])
     ax.set_yticklabels([])
     ax.set_zticklabels([])
+    ax.tick_params(axis='both', which='major', labelsize=8)
     ax.set_title("Time: " +str(t_model)+" (s)")
 
 
