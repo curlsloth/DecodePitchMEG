@@ -477,8 +477,7 @@ from sklearn.manifold import MDS
 
 def plot_mds(distances, t_model):
 
-    distances = np.insert(distances, 0, 0) - 0.495  # Insert '0' at index 0, and then substract 0.495
-    
+    distances -= min(distances)
     distance_matrix = np.zeros((8,8,))
     
     for n1 in range(8):
@@ -533,6 +532,7 @@ for t_model in t_loc:
     t_model = round(t_model,3)
     y = []
     coefs = df_fe.loc[t_model]
+    y.append(coefs['Intercept'])
     if 0.3 <= t_model <=0.32:
         for n in range(len(x1)):
             y.append(coefs['Intercept'] + coefs['pitchDist']*x1[n] + coefs['samePitch[T.True]']*x2[n] + coefs['pitchDist:samePitch[T.True]']*x1[n]*x2[n])
@@ -549,14 +549,13 @@ plt.close('all')
 
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.manifold import MDS
+from scipy.spatial.transform import Rotation as R
+
 
 def plot_manual_3Dmds(distances, t_model):
-
-    if 0.3 <= t_model <=0.32:
-        distances = np.insert(distances, 0, 0) - 0.495 # Insert '0' at index 0, and then substract 0.495
-    else:
-        distances = np.insert(distances, 0, 0) - min(distances)  # Insert '0' at index 0, and then substract 0.495
       
+    distances -= min(distances)
     distance_matrix = np.zeros((8,8,))
     
     for n1 in range(8):
@@ -565,30 +564,21 @@ def plot_manual_3Dmds(distances, t_model):
                 distance_matrix[n1, n2] = distances[abs(n1-n2)]
 
     if 0.3 <= t_model <=0.32:
-        mds = MDS(n_components=3, dissimilarity='precomputed', random_state=6) # random_state=6 is good!
+        mds = MDS(n_components=3, dissimilarity='precomputed', random_state=91) # random_state=6 is good!
         coordinates = mds.fit_transform(distance_matrix)
+    
+        
+        
+        azimuth = np.deg2rad(0)
+        elevation = np.deg2rad(-140)
+        rotation = np.deg2rad(10)
+        
+        r = R.from_euler('zyx', [azimuth, elevation, rotation])
+        
+        # Apply the rotation to a vector
+        rotated_coordinates = r.apply(coordinates)
 
-        # Convert degrees to radians
-        # azim = np.deg2rad(-40)
-        azim = np.deg2rad(-275)
-        elev = np.deg2rad(-265)
-
-        # Define the rotation matrix for rotation around the z-axis (azimuth)
-        R_z = np.array([[np.cos(azim), -np.sin(azim), 0],
-                        [np.sin(azim), np.cos(azim), 0],
-                        [0, 0, 1]])
-
-        # Define the rotation matrix for rotation around the x-axis (elevation)
-        R_x = np.array([[1, 0, 0],
-                        [0, np.cos(elev), -np.sin(elev)],
-                        [0, np.sin(elev), np.cos(elev)]])
-
-        # Combine the rotations: Note that R_x is applied first, then R_z
-        R_combined = np.dot(R_z, R_x)
-
-        # Apply the combined rotation to the coordinates
-        rotated_coordinates = np.dot(coordinates, R_combined.T)
-
+    
         x = rotated_coordinates[:,0]
         y = rotated_coordinates[:,1]
         z = rotated_coordinates[:,2]
@@ -599,50 +589,58 @@ def plot_manual_3Dmds(distances, t_model):
         x = np.zeros_like(z)
         y = np.zeros_like(z)
     
-    
-    import matplotlib.pyplot as plt
-    
+    # rescale the coordinates
+    x*=1000
+    y*=1000
+    z*=1000
     
     # Create a 3D scatter plot
     plt.style.use('seaborn-notebook')
     fig = plt.figure(figsize=(4, 5))
     ax = fig.add_subplot(111, projection='3d')
     ax.set_box_aspect([1, 1, 1.7])
-
+    # ax.set_box_aspect([1, 1, 1])
+    
     # Plot the points
     ax.scatter(x, y, z, c=[1,2,3,1,2,3,1,2], label='Points')
-
+    
     # Annotate points with their index
     for i, p_name in zip(range(len(x)), ["G#6", "C7", "E7", "G#7", "C8", "E8", "G#8", "C9"]):
-        ax.text(x[i], y[i], z[i], p_name)
-
+        ax.text(x[i], y[i], z[i], p_name, fontsize=8)
+    
     # Connect the points with a line
     ax.plot(x, y, z, color='r', label='Line')
-
+    
     # Add labels
     # ax.set_xlabel('X axis')
     # ax.set_ylabel('Y axis')
     # ax.set_zlabel('Z axis')
-    ax.set_xlim([-0.01,0.01])
-    ax.set_ylim([-0.01,0.01])
-    ax.set_zlim([0,0.05])
-    ax.set_xticks([-0.01,-0.005,0,0.005,0.01])
-    ax.set_yticks([-0.01,-0.005,0,0.005,0.01])
-    ax.set_zticks([0,0.01,0.02,0.03,0.04,0.05])
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
-    ax.set_zticklabels([])
-    ax.tick_params(axis='both', which='major', labelsize=8)
+    ax.set_xlim([-3,3])
+    ax.set_ylim([-3,3])
+    ax.set_zlim([0,60])
+    ax.set_xticks([-3,-1.5,0,1.5,3])
+    ax.set_yticks([-3,-1.5,0,1.5,3])
+    ax.set_zticks([0,10,20,30,40,50,60])
+    ax.set_xticklabels([-3,-1.5,0,1.5,3],verticalalignment='baseline')
+    ax.set_yticklabels([-3,-1.5,0,1.5,3],verticalalignment='baseline',horizontalalignment='left')
+    ax.set_zticklabels([0,10,20,30,40,50,60])
+    # plt.gca().yaxis.set_major_formatter(plt.ScalarFormatter(useMathText=True))
+    # plt.gca().xaxis.set_major_formatter(plt.ScalarFormatter(useMathText=True))
+
+    # plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    # plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+
+    ax.tick_params(axis='both', which='major', labelsize=8, pad=0.1)
     ax.set_title("Time: " +str(t_model)+" (s)")
-
-
+    
+    
     # # Show the legend
     # ax.legend()
-
+    
     # ax.view_init(10, -40)
-    ax.view_init(10, -55)
-
-
+    ax.view_init(5, 146)
+    
+    
     # Show the plot
     plt.show()
 
@@ -660,6 +658,7 @@ for t_model in t_loc:
     t_model = round(t_model,3)
     y = []
     coefs = df_fe.loc[t_model]
+    y.append(coefs['Intercept'])
     if 0.3 <= t_model <=0.32:
         for n in range(len(x1)):
             y.append(coefs['Intercept'] + coefs['pitchDist']*x1[n] + coefs['samePitch[T.True]']*x2[n] + coefs['pitchDist:samePitch[T.True]']*x1[n]*x2[n])
@@ -667,7 +666,7 @@ for t_model in t_loc:
         for n in range(len(x1)):
             y.append(coefs['Intercept'] + coefs['pitchDist']*x1[n])
     
-    distances = y
+    distances = np.array(y)
     plot_manual_3Dmds(distances, t_model)
     plt.savefig('3D_time'+str(int(t_model*1000))+'ms.png', format='png', dpi=600)
 
