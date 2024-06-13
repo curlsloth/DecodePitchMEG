@@ -518,3 +518,36 @@ def seq_mlm_sepModels(data, n_perm, corr_all):
     
     return df_samePitch_tvalues, df_coch_tvalues, df_samePitch_fe, df_coch_fe
 
+# %% return ERP
+def get_ERP(raw, ica_exclude, save_dir, subject):
+  
+    import mne
+    import preprocFunc as pf 
+    
+    
+    ica = mne.preprocessing.read_ica(save_dir+subject+'_ICA.fif')
+    raw.load_data()
+    ica.exclude = ica_exclude # this is imported from the subject .py file
+    
+    ica.apply(raw)  
+      
+    reconst_raw = raw.copy()
+      
+
+    # filter data
+    reconst_raw = reconst_raw.filter(l_freq=0.1, h_freq=40, phase='zero-double')
+    reconst_raw.info
+    
+    
+    # epoch
+    events = mne.find_events(reconst_raw)
+    
+    # recode events
+    eventRecode = pf.recodeEvents(events)
+    
+    epochs_reconst = mne.Epochs(reconst_raw, eventRecode, event_id=eventReCode_dict, tmin=-0.2, tmax=0.5, 
+                        baseline=(None, 0), preload=True, proj=False, picks='meg',
+                        reject=dict(mag=4e-12),
+                        decim = 6) # make the sampling rate as 200 Hz (original sf = 1200 Hz), which is > 3*40
+        
+    return epochs_reconst
