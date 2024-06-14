@@ -132,13 +132,26 @@ brain = Brain(
     size=(1200, 600),
 )
 
-
+colors = sns.color_palette("Set2")
+colors = sns.color_palette("deep", 10)
+alpha = 0.9
 for label in roi_list:
-    brain.add_label(label, borders=False)
+    if "Early Auditory Cortex" in label.name:
+        brain.add_label(label, borders=False, color=colors[3], alpha=alpha)
+    elif "Auditory Association Cortex" in label.name:
+        brain.add_label(label, borders=False, color=colors[1], alpha=alpha)
+    elif "Inferior Frontal Cortex" in label.name:
+        brain.add_label(label, borders=False, color=colors[4], alpha=alpha)
+    elif "Insular and Frontal Opercular Cortex" in label.name:
+        brain.add_label(label, borders=False, color=colors[5], alpha=alpha)
+    elif "Orbital and Polar Frontal Cortex" in label.name:
+        brain.add_label(label, borders=False, color=colors[2], alpha=alpha)
+    elif "DorsoLateral Prefrontal Cortex" in label.name:
+        brain.add_label(label, borders=False, color=colors[0], alpha=alpha)
     
 brain.show_view(col = 1, view={'elevation':90, 'azimuth':35})
 brain.show_view(col = 0, view={'elevation':90, 'azimuth':145})
-brain.save_image("ROI_atlas.png")
+# brain.save_image("ROI_atlas.png")
 
 # %% plot brain
 
