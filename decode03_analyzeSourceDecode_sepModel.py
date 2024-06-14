@@ -92,7 +92,6 @@ t_obs, clusters, cluster_pv, H0 = permutation_cluster_1samp_test(X=score_subj-0.
 
 
 fig, ax = plt.subplots(1, figsize=(6, 3.5))
-# fig.suptitle('Pitch decoding AUC (averaged across pitch pairs)')
 plt.style.use('seaborn-paper')
 line_subj = ax.plot(timeAxis, score_subj.T, color='k', alpha = 0.2, label='participant',zorder=2)
 line_mean = ax.plot(timeAxis, score_subj.mean(axis=0), color='m', linewidth=3, label='mean',zorder=10)
@@ -107,21 +106,8 @@ for n in range(len(clusters)):
         area_abovechance = ax.axvspan(xmin=t_min, xmax=t_max, ymin=0, ymax=1, color='b', alpha=0.15)
         text_pos = [(t_min+t_max)/2-0.01, 0.56]
         rotation=0
-        # if t_max-t_min < 0.1:
-        #     rotation = 90
-        #     text_pos[1] -= 0.005
-        # if cluster_pv[n] < 0.002:
-        #     ax.text(text_pos[0], text_pos[1], 'p < 0.001', fontstyle='italic', fontsize=8, rotation=rotation)
-        # else:
-        #     ax.text(text_pos[0], text_pos[1], 'p = '+str(round(cluster_pv[n],3)), fontstyle='italic', fontsize=8, rotation=rotation)
 ax.legend([line_subj[0], line_mean[0], area_abovechance],['participant mean','grand mean', 'p < 0.01'], loc='best', fontsize=8)
 
-# if fband=='delta':
-#     text_pos = [0.20, 0.56]
-#     ax.text(text_pos[0], text_pos[1], 'p = '+str(round(cluster_pv[clus_ind],3)), fontstyle='italic',fontsize=8)
-# elif fband=='theta':
-#     text_pos = [0.12, 0.47]
-#     ax.text(text_pos[0], text_pos[1], 'p < 0.001', fontstyle='italic',fontsize=8)
 ax.set_title(fband, fontsize=10)
 ax.set_xlabel('time (s)', fontsize=8)
 ax.set_ylabel('ROC-AUC', fontsize=8)
@@ -183,21 +169,9 @@ for n in range(len(clusters)):
         area_abovechance = ax.axvspan(xmin=t_min, xmax=t_max, ymin=0, ymax=1, color='b', alpha=0.15)
         text_pos = [(t_min+t_max)/2-0.01, 0.55]
         rotation=0
-        # if t_max-t_min < 0.1:
-        #     rotation = 90
-        #     text_pos[1] -= 0.005
-        # if cluster_pv[n] < 0.002:
-        #     ax.text(text_pos[0], text_pos[1], 'p < 0.001', fontstyle='italic', fontsize=8, rotation=rotation)
-        # else:
-        #     ax.text(text_pos[0], text_pos[1], 'p = '+str(round(cluster_pv[n],3)), fontstyle='italic', fontsize=8, rotation=rotation)
+
 plt.xlim([-0.2,0.5])
 ax.legend([line_mean[0], area_abovechance],['grand mean', 'p < 0.01'], loc='best', fontsize=8)
-# if fband=='delta':
-#     text_pos = [0.20, 0.56]
-#     ax.text(text_pos[0], text_pos[1], 'p = '+str(round(cluster_pv[clus_ind],3)), fontstyle='italic',fontsize=8)
-# elif fband=='theta':
-#     text_pos = [0.12, 0.47]
-#     ax.text(text_pos[0], text_pos[1], 'p < 0.001', fontstyle='italic',fontsize=8)
 
 ax.set_title(fband, fontsize=10)
 ax.set_xlabel('time (s)', fontsize=8)
@@ -209,8 +183,6 @@ plt.savefig('fig2/byItem_'+fband+'.png', format='png', dpi=600)
 
 # %% write a bootstrapping method
 # read the files produced by decode02_HPC_pitchMLM_permutation.py
-
-
 
    
 def cal_clu_stats(data, threshold):
