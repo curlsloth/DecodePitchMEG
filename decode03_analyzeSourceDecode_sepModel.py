@@ -51,33 +51,36 @@ timeAxis = np.round(np.arange(-0.2,0.505,0.005),3)
 
 file_folder = 'sourceSTC20230711_ico3_freqBands_shuffled/decodeSource20230711_RidgeCV/auditory_frontal_alpha10^(-2)-10^3_41grid_correctPitchCoefPattern/'
 
-
-scores_pitch_all = []
-score_tempGen_pitch_all = []
-
-for subject in subCode:
-
+def load_data(subCode, file_folder, fband):
+    # fband = 'delta', 'theta', 'alpha', 'beta', and 'gamma'
     
-    fband = 'delta' # change this into 'theta', 'alpha', 'beta', and 'gamma'
-    with open(file_folder+subject+'_'+fband+'_decode', 'rb') as fp:
-        _, _, _, score_pitch, _, _, _, patterns_pitch = pickle.load(fp)  
-        fp.close()
+    scores_pitch_all = []
+    score_tempGen_pitch_all = []
+    
+    for subject in subCode:
+    
+        with open(file_folder+subject+'_'+fband+'_decode', 'rb') as fp:
+            _, _, _, score_pitch, _, _, _, patterns_pitch = pickle.load(fp)  
+            fp.close()
+            
+        with open(file_folder+subject+'_'+fband+'_decode_tempGen', 'rb') as fp:
+            score_tempGen_pitch = pickle.load(fp)  
+            fp.close()
         
-    with open(file_folder+subject+'_'+fband+'_decode_tempGen', 'rb') as fp:
-        score_tempGen_pitch = pickle.load(fp)  
-        fp.close()
+        scores_pitch_all.append(score_pitch)
+        score_tempGen_pitch_all.append(score_tempGen_pitch)
+        
+        del score_pitch, patterns_pitch, score_tempGen_pitch
     
-    scores_pitch_all.append(score_pitch)
-    score_tempGen_pitch_all.append(score_tempGen_pitch)
+    scores_pitch_all = np.stack([scores_pitch_all[i] for i in subSel], axis=0)
+    score_tempGen_pitch_all = np.stack([score_tempGen_pitch_all[i] for i in subSel], axis=0)
     
-    del score_pitch, patterns_pitch, score_tempGen_pitch
-
-scores_pitch_all = np.stack([scores_pitch_all[i] for i in subSel], axis=0)
-score_tempGen_pitch_all = np.stack([score_tempGen_pitch_all[i] for i in subSel], axis=0)
+    return scores_pitch_all, score_tempGen_pitch_all
 
 # %% cluter permutation test on the overall pitch decoding accuracy
 
-
+fband = 'delta'
+scores_pitch_all, _ = load_data(subCode, file_folder, fband)
 
 width_threshold = 1
 threshold=t.isf(0.05/2,len(subCode)-1)
@@ -88,13 +91,13 @@ score_subj = np.nanmean(scores_pitch_all, axis = (1,3,4))
 t_obs, clusters, cluster_pv, H0 = permutation_cluster_1samp_test(X=score_subj-0.5, threshold=threshold, exclude=exclude, tail=0, n_permutations=5000, n_jobs=-1, seed=23)
 
 
-fig, ax = plt.subplots(1, figsize=(5, 4))
+fig, ax = plt.subplots(1, figsize=(6, 3.5))
 # fig.suptitle('Pitch decoding AUC (averaged across pitch pairs)')
-plt.style.use('seaborn-notebook')
+plt.style.use('seaborn-paper')
 line_subj = ax.plot(timeAxis, score_subj.T, color='k', alpha = 0.2, label='participant',zorder=2)
 line_mean = ax.plot(timeAxis, score_subj.mean(axis=0), color='m', linewidth=3, label='mean',zorder=10)
-line_chance = ax.axhline(.5, color='k', linestyle='--', label='chance',zorder=1)
-ax.axvline(0, color='k')
+line_chance = ax.axhline(.5, color='k', linestyle='--', linewidth=1, label='chance',zorder=1)
+ax.axvline(0, color='k', linewidth=1)
 # area_abovechance = ax.axvspan(xmin=t_min, xmax=t_max, ymin=0, ymax=1, color='b', alpha=0.15)
 plt.xlim([-0.2,0.5])
 for n in range(len(clusters)):
@@ -111,7 +114,7 @@ for n in range(len(clusters)):
         #     ax.text(text_pos[0], text_pos[1], 'p < 0.001', fontstyle='italic', fontsize=8, rotation=rotation)
         # else:
         #     ax.text(text_pos[0], text_pos[1], 'p = '+str(round(cluster_pv[n],3)), fontstyle='italic', fontsize=8, rotation=rotation)
-ax.legend([line_subj[0], line_mean[0], area_abovechance],['participant mean','grand mean', 'p < 0.01'], loc='best', fontsize=6)
+ax.legend([line_subj[0], line_mean[0], area_abovechance],['participant mean','grand mean', 'p < 0.01'], loc='best', fontsize=8)
 
 # if fband=='delta':
 #     text_pos = [0.20, 0.56]
@@ -120,14 +123,16 @@ ax.legend([line_subj[0], line_mean[0], area_abovechance],['participant mean','gr
 #     text_pos = [0.12, 0.47]
 #     ax.text(text_pos[0], text_pos[1], 'p < 0.001', fontstyle='italic',fontsize=8)
 ax.set_title(fband, fontsize=10)
-ax.set_xlabel('time (s)', fontsize=10)
-ax.set_ylabel('ROC-AUC', fontsize=10)
-ax.tick_params(labelsize=8)
-# plt.savefig(file_folder+'/permutation_MLM_time_sepModels_reFull_spearmanCoch/figs/pitch_auc.tif')
+ax.set_xlabel('time (s)', fontsize=8)
+ax.set_ylabel('ROC-AUC', fontsize=8)
+ax.tick_params(labelsize=6)
+
+plt.savefig('fig2/bySubject_'+fband+'.png', format='png', dpi=600)
 
 # %% plot by-pair AUC time series
 
-
+fband = 'gamma'
+scores_pitch_all, _ = load_data(subCode, file_folder, fband)
 
 score_pair=[]
 dist_list = []
@@ -154,23 +159,23 @@ t_obs, clusters, cluster_pv, H0 = permutation_cluster_1samp_test(X=score_pair-0.
 cmap = plt.get_cmap('viridis')
 norm = Normalize(vmin=1, vmax=7)
 
-fig, ax = plt.subplots(1, figsize=(5, 4))
+fig, ax = plt.subplots(1, figsize=(6, 3.5))
 # fig.suptitle('Pitch decoding AUC (averaged across pitch pairs)')
-plt.style.use('seaborn-notebook')
+plt.style.use('seaborn-paper')
 
 line_segments = LineCollection(segs, array=dist_list, alpha=0.5)
 ax.add_collection(line_segments)
 
 axcb = fig.colorbar(line_segments)
-axcb.set_label('pitch height difference (# of octaves)', fontsize=10)
+axcb.set_label('pitch height difference (# of octaves)', fontsize=8)
 axcb.set_ticks([1/3, 2/3, 1, 4/3, 5/3, 2, 7/3])
 axcb.set_ticklabels(['1/3', '2/3', '1', '4/3', '5/3', '2', '7/3'])
-axcb.ax.tick_params(labelsize=8)
+axcb.ax.tick_params(labelsize=6)
 
 
 line_mean = ax.plot(timeAxis, score_pair.mean(axis=0), color='m', linewidth=3, label='mean',zorder=10)
-line_chance = ax.axhline(.5, color='k', linestyle='--', label='chance',zorder=5)
-ax.axvline(0, color='k')
+line_chance = ax.axhline(.5, color='k', linestyle='--', label='chance',zorder=5, linewidth=1)
+ax.axvline(0, color='k', linewidth=1)
 for n in range(len(clusters)):
     if (cluster_pv[n]<cluster_threshold) & (len(clusters[n][0])>=width_threshold):
         t_min = timeAxis[clusters[n][0][0]]
@@ -186,7 +191,7 @@ for n in range(len(clusters)):
         # else:
         #     ax.text(text_pos[0], text_pos[1], 'p = '+str(round(cluster_pv[n],3)), fontstyle='italic', fontsize=8, rotation=rotation)
 plt.xlim([-0.2,0.5])
-ax.legend([line_mean[0], area_abovechance],['grand mean', 'p < 0.01'], loc='best', fontsize=6)
+ax.legend([line_mean[0], area_abovechance],['grand mean', 'p < 0.01'], loc='best', fontsize=8)
 # if fband=='delta':
 #     text_pos = [0.20, 0.56]
 #     ax.text(text_pos[0], text_pos[1], 'p = '+str(round(cluster_pv[clus_ind],3)), fontstyle='italic',fontsize=8)
@@ -195,10 +200,11 @@ ax.legend([line_mean[0], area_abovechance],['grand mean', 'p < 0.01'], loc='best
 #     ax.text(text_pos[0], text_pos[1], 'p < 0.001', fontstyle='italic',fontsize=8)
 
 ax.set_title(fband, fontsize=10)
-ax.set_xlabel('time (s)', fontsize=10)
-ax.set_ylabel('ROC-AUC', fontsize=10)
-ax.tick_params(labelsize=8)
+ax.set_xlabel('time (s)', fontsize=8)
+ax.set_ylabel('ROC-AUC', fontsize=8)
+ax.tick_params(labelsize=6)
 
+plt.savefig('fig2/byItem_'+fband+'.png', format='png', dpi=600)
 
 
 # %% write a bootstrapping method
@@ -410,6 +416,8 @@ plt.show()
 
 # %% temporal generalization
 
+fband = 'delta'
+scores_pitch_all, score_tempGen_pitch_all = load_data(subCode, file_folder, fband)
 
 tempGen_list = []
 pitch_mingap=3
