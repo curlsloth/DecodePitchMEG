@@ -177,3 +177,33 @@ ax.set_title('Same chroma')
 # cbar.set_ticks([0, 1])  # Place ticks at the middle of each color bin (0 and 1 in this case)
 # cbar.set_ticklabels(['False', 'True'])
 
+# %% plot ERF
+import os
+import numpy as np
+import mne
+import preprocFunc as pf
+import matplotlib.pyplot as plt
+
+def ave_ERF():
+    epochs_reconst = []
+    for file_num in [1,2,3,4,5,6,7,8,9,10,12,13,14,15,16,17,18]:
+        filename = 'subjPyScript/sub'+str(file_num)+'.py'
+        with open(filename, 'r') as file:
+            code = file.read()
+        
+        # Execute the code from the .py file
+        exec(code)
+    
+        epochs_reconst.append(pf.get_ERP(raw, ica_exclude, save_dir, subject).average())
+        
+    
+    grand_average = mne.grand_average(epochs_reconst)
+    grand_average.save('save_fif/ERF_grant_average_0613')
+    
+# ave_ERF()
+
+grand_average= mne.read_evokeds('save_fif/ERF_grant_average_0613',0)
+
+fig = grand_average.crop(tmin=-0.1).plot_joint(times=[0.1,0.2,0.3,0.4], title='') 
+fig.set_size_inches(7, 7)
+plt.savefig('ERF.png', format='png', dpi=600)
