@@ -79,7 +79,7 @@ def load_data(subCode, file_folder, fband):
 
 # %% cluter permutation test on the overall pitch decoding accuracy
 
-fband = 'delta'
+fband = 'gamma'
 scores_pitch_all, _ = load_data(subCode, file_folder, fband)
 
 width_threshold = 1
@@ -108,6 +108,8 @@ for n in range(len(clusters)):
         rotation=0
 ax.legend([line_subj[0], line_mean[0], area_abovechance],['participant mean','grand mean', 'p < 0.01'], loc='best', fontsize=8)
 
+if fband == 'gamma':
+    fband = 'low '+fband
 ax.set_title(fband, fontsize=10)
 ax.set_xlabel('time (s)', fontsize=8)
 ax.set_ylabel('ROC-AUC', fontsize=8)
@@ -117,7 +119,7 @@ plt.savefig('fig2/bySubject_'+fband+'.png', format='png', dpi=600)
 
 # %% plot by-pair AUC time series
 
-fband = 'beta'
+fband = 'gamma'
 scores_pitch_all, _ = load_data(subCode, file_folder, fband)
 
 score_pair=[]
@@ -176,6 +178,8 @@ for n in range(len(clusters)):
 plt.xlim([-0.2,0.5])
 ax.legend([line_mean[0], area_abovechance],['grand mean', 'p < 0.01'], loc='best', fontsize=8)
 
+if fband == 'gamma':
+    fband = 'low '+fband
 ax.set_title(fband, fontsize=10)
 ax.set_xlabel('time (s)', fontsize=8)
 ax.set_ylabel('ROC-AUC', fontsize=8)
