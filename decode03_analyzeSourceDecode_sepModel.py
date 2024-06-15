@@ -117,7 +117,7 @@ plt.savefig('fig2/bySubject_'+fband+'.png', format='png', dpi=600)
 
 # %% plot by-pair AUC time series
 
-fband = 'gamma'
+fband = 'beta'
 scores_pitch_all, _ = load_data(subCode, file_folder, fband)
 
 score_pair=[]
@@ -152,11 +152,14 @@ plt.style.use('seaborn-paper')
 line_segments = LineCollection(segs, array=dist_list, alpha=0.5)
 ax.add_collection(line_segments)
 
-axcb = fig.colorbar(line_segments)
-axcb.set_label('pitch height difference (# of octaves)', fontsize=8)
-axcb.set_ticks([1/3, 2/3, 1, 4/3, 5/3, 2, 7/3])
-axcb.set_ticklabels(['1/3', '2/3', '1', '4/3', '5/3', '2', '7/3'])
-axcb.ax.tick_params(labelsize=6)
+show_colorbar = False
+
+if show_colorbar:
+    axcb = fig.colorbar(line_segments)
+    axcb.set_label('pitch height difference (# of octaves)', fontsize=8)
+    axcb.set_ticks([1/3, 2/3, 1, 4/3, 5/3, 2, 7/3])
+    axcb.set_ticklabels(['1/3', '2/3', '1', '4/3', '5/3', '2', '7/3'])
+    axcb.ax.tick_params(labelsize=6)
 
 
 line_mean = ax.plot(timeAxis, score_pair.mean(axis=0), color='m', linewidth=3, label='mean',zorder=10)
