@@ -151,7 +151,7 @@ fig, ax = plt.subplots(1, figsize=(6, 3.5))
 # fig.suptitle('Pitch decoding AUC (averaged across pitch pairs)')
 plt.style.use('seaborn-paper')
 
-line_segments = LineCollection(segs, array=dist_list, alpha=0.5)
+line_segments = LineCollection(segs, array=dist_list, alpha=0.25)
 ax.add_collection(line_segments)
 
 show_colorbar = False
