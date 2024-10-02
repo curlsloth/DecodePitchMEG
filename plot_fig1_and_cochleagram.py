@@ -177,6 +177,22 @@ ax.set_title('Same chroma')
 # cbar.set_ticks([0, 1])  # Place ticks at the middle of each color bin (0 and 1 in this case)
 # cbar.set_ticklabels(['False', 'True'])
 
+# %% calculate correlation between height, chroma and cochleagram
+
+height = pitch_dist_mat[mask==False]
+chroma = bool_array[mask==False]
+cochleagram = corr_mean_pitch[mask==False]
+
+from scipy import stats
+stats.spearmanr(height, cochleagram)
+stats.spearmanr(chroma, cochleagram)
+stats.spearmanr(height, chroma)
+
+plt.scatter(height, cochleagram)
+plt.xlabel('height distance')
+plt.ylabel('cochleagram similarity')
+plt.show()
+
 # %% plot ERF
 import os
 import numpy as np

@@ -466,7 +466,7 @@ def seq_mlm_sepModels(data, n_perm, corr_all):
     mdf_coch_list =[]
 
     for nt in range(data.shape[1]):
-        pitchDist = []
+        # pitchDist = []
         pitchDist = pd.DataFrame()
         score_pitch_ind = data[:,nt,:,:]
             
