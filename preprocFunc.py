@@ -518,6 +518,100 @@ def seq_mlm_sepModels(data, n_perm, corr_all):
     
     return df_samePitch_tvalues, df_coch_tvalues, df_samePitch_fe, df_coch_fe
 
+
+
+def seq_mlm_noiseCeiling(data, corr_all):
+    import numpy as np
+    import pandas as pd
+    from scipy import stats
+    import statsmodels.formula.api as smf
+    
+    import warnings
+    warnings.filterwarnings("ignore")
+
+    r_samePitch_lowbound_time = []
+    r_samePitch_highbound_time = []
+    r_coch_lowbound_time = []
+    r_coch_highbound_time = []
+    for nt in range(data.shape[1]):
+        print('time: ', str(nt))
+        # pitchDist = []
+        pitchDist = pd.DataFrame()
+        score_pitch_ind = data[:,nt,:,:]
+            
+        for n0 in range(np.shape(score_pitch_ind)[0]):
+            for n1 in range(np.shape(score_pitch_ind)[1]):
+                for ploc in range(n1+1,8):
+                    # the unit of pitchDist has been modified to octave (Oct 17, 2023)
+                    df = {'sub': n0, 'pitchDist': (ploc-n1)/3, 'samePitch': (ploc-n1==3 or ploc-n1==6), 'auc': score_pitch_ind[n0,n1,ploc], 'coch': corr_all[n1,ploc]}
+
+                    pitchDist = pd.concat([pitchDist, pd.DataFrame([df])], ignore_index = True)
+        
+        pitchDist[['sub','samePitch']] = pitchDist[['sub','samePitch']].astype('category')
+        
+        r_samePitch_lowbound = []
+        r_samePitch_highbound = []
+        r_coch_lowbound = []
+        r_coch_highbound = []
+        for n_sub in range(data.shape[0]):
+            # leave one out
+            pitchDist_LOO = pitchDist[pitchDist['sub']!=n_sub]
+            pitchDist_O = pitchDist[pitchDist['sub']==n_sub]
+            
+            for nc_bound in ['low','high']:
+                
+                if nc_bound == 'low':
+                    df = pitchDist_LOO
+                elif nc_bound == 'high':
+                    df = pitchDist
+
+                md_samePitch = smf.mixedlm('auc ~ pitchDist + samePitch + pitchDist*samePitch', data=df, groups=df['sub'], re_formula='~pitchDist + samePitch + pitchDist*samePitch')
+                md_coch = smf.mixedlm('auc ~ pitchDist + coch + pitchDist*coch', data=df, groups=df['sub'], re_formula='~pitchDist + coch + pitchDist*coch')
+                
+                try: 
+                    mdf_samePitch = md_samePitch.fit(disp=False)
+                    mdf_coch = md_coch.fit(disp=False)
+                except: # very few cases it will get singular
+                    import random
+                    for nRow in range(len(pitchDist)):
+                        pitchDist['auc'].iloc[nRow] += (random.random()-0.5)*0.0002 # if getting singular, add 0.001 jitter to the data 
+                    md_samePitch = smf.mixedlm('auc ~ pitchDist + samePitch + pitchDist*samePitch', data=df, groups=df['sub'], re_formula='~pitchDist + samePitch + pitchDist*samePitch')
+                    md_coch = smf.mixedlm('auc ~ pitchDist + coch + pitchDist*coch', data=df, groups=df['sub'], re_formula='~pitchDist + coch + pitchDist*coch')
+                    mdf_samePitch = md_samePitch.fit(disp=False)
+                    mdf_coch = md_coch.fit(disp=False)
+                
+                fe_samePitch = mdf_samePitch.fe_params
+                fe_coch = mdf_coch.fe_params
+                
+                pred_samePitch = fe_samePitch['Intercept'] + \
+                    fe_samePitch['samePitch[T.True]']*(pitchDist_O['samePitch']==True) + \
+                    fe_samePitch['pitchDist']*pitchDist_O['pitchDist'] + \
+                    fe_samePitch['pitchDist:samePitch[T.True]']*(pitchDist_O['pitchDist'] * (pitchDist_O['samePitch']==True))
+                pred_coch = fe_coch['Intercept'] + \
+                    fe_coch['coch']*pitchDist_O['coch'] + \
+                    fe_coch['pitchDist']*pitchDist_O['pitchDist'] + \
+                    fe_coch['pitchDist:coch']*(pitchDist_O['pitchDist'] * pitchDist_O['coch'])
+                
+                r_samePitch, _ = stats.pearsonr(pred_samePitch, pitchDist_O['auc'])
+                r_coch, _ = stats.pearsonr(pred_coch, pitchDist_O['auc'])
+                
+                if nc_bound == 'low':
+                    r_samePitch_lowbound.append(r_samePitch)
+                    r_coch_lowbound.append(r_coch)
+                elif nc_bound == 'high':
+                    r_samePitch_highbound.append(r_samePitch)
+                    r_coch_highbound.append(r_coch)
+                    
+    
+    r_samePitch_lowbound_time.append(np.mean(r_samePitch_lowbound))
+    r_samePitch_highbound_time.append(np.mean(r_samePitch_highbound))
+    r_coch_lowbound_time.append(np.mean(r_coch_lowbound))
+    r_coch_highbound_time.append(np.mean(r_coch_highbound))
+    
+    return r_samePitch_lowbound_time, r_samePitch_highbound_time, r_coch_lowbound_time, r_coch_highbound_time
+
+    
+
 # %% return ERP
 def get_ERP(raw, ica_exclude, save_dir, subject):
   
