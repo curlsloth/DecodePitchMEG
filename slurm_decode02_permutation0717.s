@@ -15,4 +15,4 @@ module purge
 
 cd /scratch/ac8888/XiangbinMEG_music_decode
 
-~/pyenv/run-mne.bash python decode02_HPC_pitchMLM_permutation.py $SLURM_ARRAY_TASK_ID
+/scratch/ac8888/XiangbinMEG_music_decode/pyenv/run-mne.bash python decode02_HPC_pitchMLM_permutation.py $SLURM_ARRAY_TASK_ID
