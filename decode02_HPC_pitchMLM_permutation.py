@@ -60,7 +60,7 @@ for fband in ['alpha']:
         for subject in subCode:
             
     
-            # Random Forest Classifier: frequency bands
+            # frequency bands
             with open(file_folder+subject+'_'+fband+'_decode', 'rb') as fp:
                 _, _, _, score_pitch, _, _, _, _ = pickle.load(fp)  
                 fp.close()
@@ -108,4 +108,11 @@ for fband in ['alpha']:
             print(save_file_name_coch)
             print(save_file_name_samePitch_fixedeffect)
             print(save_file_name_coch_fixedeffect)
+            
+            # run noise ceiling
+            noiseCeiling_df = pf.seq_mlm_noiseCeiling(data, corr_all)
+            noiseCeiling_df.set_index(timeAxis, inplace=True) # make index as time
+            save_file_name_noiseCeiling = file_folder+perm_folder+'/'+fband+'_noiseCeiling.csv'
+            noiseCeiling_df.to_csv(save_file_name_noiseCeiling)
+            print(save_file_name_noiseCeiling)
 

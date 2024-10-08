@@ -607,8 +607,16 @@ def seq_mlm_noiseCeiling(data, corr_all):
         r_samePitch_highbound_time.append(np.mean(r_samePitch_highbound))
         r_coch_lowbound_time.append(np.mean(r_coch_lowbound))
         r_coch_highbound_time.append(np.mean(r_coch_highbound))
+        
     
-    return r_samePitch_lowbound_time, r_samePitch_highbound_time, r_coch_lowbound_time, r_coch_highbound_time
+    noiseCeiling_df = pd.DataFrame({
+        'r_samePitch_lowbound_time':r_samePitch_lowbound_time,
+        'r_samePitch_highbound_time':r_samePitch_highbound_time,
+        'r_coch_lowbound_time':r_coch_lowbound_time,
+        'r_coch_highbound_time':r_coch_highbound_time
+        })
+    
+    return noiseCeiling_df
 
     
 
