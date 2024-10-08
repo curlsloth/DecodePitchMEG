@@ -535,7 +535,6 @@ def seq_mlm_noiseCeiling(data, corr_all):
     r_coch_highbound_time = []
     for nt in range(data.shape[1]):
         print('time: ', str(nt))
-        # pitchDist = []
         pitchDist = pd.DataFrame()
         score_pitch_ind = data[:,nt,:,:]
             
@@ -554,9 +553,8 @@ def seq_mlm_noiseCeiling(data, corr_all):
         r_coch_lowbound = []
         r_coch_highbound = []
         for n_sub in range(data.shape[0]):
-            # leave one out
-            pitchDist_LOO = pitchDist[pitchDist['sub']!=n_sub]
-            pitchDist_O = pitchDist[pitchDist['sub']==n_sub]
+            pitchDist_LOO = pitchDist[pitchDist['sub']!=n_sub] # leave one out
+            pitchDist_O = pitchDist[pitchDist['sub']==n_sub] # the left one
             
             for nc_bound in ['low','high']:
                 

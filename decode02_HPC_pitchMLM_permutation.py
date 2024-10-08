@@ -15,7 +15,7 @@ n_perm_start = int(sys.argv[1])*10 # take input as n_perm random seed
 
 #######
 ## run the HPC with the code below (array starting from 0 to run the original test)
-# sbatch --array=0-500 slurm_decode02_permutation0717.s
+# sbatch --array=0-1000 slurm_decode02_permutation0717.s
 #######
 
 import preprocFunc as pf
@@ -50,9 +50,10 @@ file_folder_list = [
     root_folder+'auditory_frontal_alpha10^(-2)-10^3_41grid_correctPitchCoefPattern/'    
     ]
 
-perm_folder = 'permutation_MLM_time_sepModels_reFull_spearmanCoch_17subjs'
+# perm_folder = 'permutation_MLM_time_sepModels_reFull_spearmanCoch_17subjs'
+perm_folder = 'permutation_MLM_time_sepModels_reFull_spearmanCoch_17subjs_NC_10k'
 
-for fband in ['alpha']:
+for fband in ['delta','theta','alpha']:
     # run separate MLM models
     for file_folder in file_folder_list:
         scores_pitch_all = []
@@ -109,7 +110,7 @@ for fband in ['alpha']:
             print(save_file_name_samePitch_fixedeffect)
             print(save_file_name_coch_fixedeffect)
             
-            # run noise ceiling
+            # run noise ceiling (NC)
             noiseCeiling_df = pf.seq_mlm_noiseCeiling(data, corr_all)
             noiseCeiling_df.set_index(timeAxis, inplace=True) # make index as time
             save_file_name_noiseCeiling = file_folder+perm_folder+'/'+fband+'_noiseCeiling.csv'
