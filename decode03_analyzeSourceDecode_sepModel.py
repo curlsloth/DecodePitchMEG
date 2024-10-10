@@ -50,6 +50,11 @@ timeAxis = np.round(np.arange(-0.2,0.505,0.005),3)
 
 
 file_folder = 'sourceSTC20230711_ico3_freqBands_shuffled/decodeSource20230711_RidgeCV/auditory_frontal_alpha10^(-2)-10^3_41grid_correctPitchCoefPattern/'
+# perm_folder = 'permutation_MLM_time_sepModels_reFull_spearmanCoch_17subjs/'
+perm_folder = 'permutation_MLM_time_sepModels_reFull_spearmanCoch_17subjs_NC_10k/'
+
+save_fig = False
+
 
 def load_data(subCode, file_folder, fband):
     # fband = 'delta', 'theta', 'alpha', 'beta', and 'gamma'
@@ -79,16 +84,17 @@ def load_data(subCode, file_folder, fband):
 
 # %% cluter permutation test on the overall pitch decoding accuracy
 
-fband = 'gamma'
+fband = 'delta'
 scores_pitch_all, _ = load_data(subCode, file_folder, fband)
 
 width_threshold = 1
 threshold=t.isf(0.05/2,len(subCode)-1)
 cluster_threshold = 0.01
 exclude=timeAxis<0
+n_permutations=10000
 
 score_subj = np.nanmean(scores_pitch_all, axis = (1,3,4))
-t_obs, clusters, cluster_pv, H0 = permutation_cluster_1samp_test(X=score_subj-0.5, threshold=threshold, exclude=exclude, tail=0, n_permutations=5000, n_jobs=-1, seed=23)
+t_obs, clusters, cluster_pv, H0 = permutation_cluster_1samp_test(X=score_subj-0.5, threshold=threshold, exclude=exclude, tail=0, n_permutations=n_permutations, n_jobs=-1, seed=23)
 
 
 fig, ax = plt.subplots(1, figsize=(6, 3.5))
@@ -115,11 +121,13 @@ ax.set_xlabel('time (s)', fontsize=8)
 ax.set_ylabel('ROC-AUC', fontsize=8)
 ax.tick_params(labelsize=6)
 
-plt.savefig('fig2/bySubject_'+fband+'.png', format='png', dpi=600)
+
+if save_fig:
+    plt.savefig('fig2/bySubject_'+fband+'.png', format='png', dpi=600)
 
 # %% plot by-pair AUC time series
 
-fband = 'gamma'
+fband = 'delta'
 scores_pitch_all, _ = load_data(subCode, file_folder, fband)
 
 score_pair=[]
@@ -136,10 +144,11 @@ width_threshold = 1
 threshold=t.isf(0.05/2,len(score_pair)-1)
 cluster_threshold = 0.01
 exclude=timeAxis<0
+n_permutations=10000
 
 segs = [np.column_stack([timeAxis, y]) for y in score_pair]
         
-t_obs, clusters, cluster_pv, H0 = permutation_cluster_1samp_test(X=score_pair-0.5, threshold=threshold, exclude=exclude, tail=0, n_permutations=5000, n_jobs=-1, seed=23)
+t_obs, clusters, cluster_pv, H0 = permutation_cluster_1samp_test(X=score_pair-0.5, threshold=threshold, exclude=exclude, tail=0, n_permutations=n_permutations, n_jobs=-1, seed=23)
 
 
 
@@ -185,7 +194,8 @@ ax.set_xlabel('time (s)', fontsize=8)
 ax.set_ylabel('ROC-AUC', fontsize=8)
 ax.tick_params(labelsize=6)
 
-plt.savefig('fig2/byItem_'+fband+'.png', format='png', dpi=600)
+if save_fig:
+    plt.savefig('fig2/byItem_'+fband+'.png', format='png', dpi=600)
 
 
 # %% write a bootstrapping method
@@ -286,7 +296,7 @@ def plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, t_min, t_max, 
                 if p_val_list[n]==0:
                     p_val_text='p < 0.001'
                 else:
-                    p_val_text='p = '+str(round(p_val_list[n],3))
+                    p_val_text='p = '+"{:.3f}".format(p_val_list[n])
                 ax[ax_n].text(text_position[0], text_position[1], p_val_text, fontstyle='italic', rotation = 90, fontsize=4.5)
         
         ax_n+=1
@@ -299,16 +309,16 @@ def plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, t_min, t_max, 
 
 # 'samePitch': chroma equivalence
 # 'coch': cochleagram similarity
-model_sel = 'samePitch' 
+model_sel = 'coch' 
 
 if model_sel=='samePitch':
-    dir_list = glob.glob(file_folder+'permutation_MLM_time_sepModels_reFull_spearmanCoch_17subjs/'+fband+ '*samePitch*perm*.csv')
-    dir_orig = glob.glob(file_folder+'permutation_MLM_time_sepModels_reFull_spearmanCoch_17subjs/'+fband+ '*samePitch*orig*.csv')
+    dir_list = glob.glob(file_folder+perm_folder+fband+ '*samePitch*perm*.csv')
+    dir_orig = glob.glob(file_folder+perm_folder+fband+ '*samePitch*orig*.csv')
     col_name_list = ['pitchDist','samePitch[T.True]','pitchDist:samePitch[T.True]']
     model_name=''
 elif model_sel=='coch':
-    dir_list = glob.glob(file_folder+'permutation_MLM_time_sepModels_reFull_spearmanCoch_17subjs/'+fband+ '*coch*perm*.csv')
-    dir_orig = glob.glob(file_folder+'permutation_MLM_time_sepModels_reFull_spearmanCoch_17subjs/'+fband+ '*coch*orig*.csv')
+    dir_list = glob.glob(file_folder+perm_folder+fband+ '*coch*perm*.csv')
+    dir_orig = glob.glob(file_folder+perm_folder+fband+ '*coch*orig*.csv')
     col_name_list = ['pitchDist','coch','pitchDist:coch']
     model_name=''
 
