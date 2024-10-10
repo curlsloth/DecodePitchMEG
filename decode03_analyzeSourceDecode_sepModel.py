@@ -214,9 +214,9 @@ def cal_clu_stats(data, threshold):
 
 
 
-def plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, t_min, t_max, model_name):
+def plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, t_min, t_max, model_name, nc_df):
     plt.style.use('seaborn-notebook')
-    fig, ax = plt.subplots(3,1, figsize=(4, 5))
+    fig, ax = plt.subplots(4,1, figsize=(3, 5), gridspec_kw={'height_ratios': [2, 2, 2, 1]})
     fig.tight_layout()
     ax_n=0
     for col_name in col_name_list:
@@ -273,11 +273,13 @@ def plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, t_min, t_max, 
         ax[ax_n].tick_params(labelsize=6)
         ax[ax_n].set_xticks([0.1,0.2,0.3,0.4,0.5])
         ax[ax_n].set_xlim(0,0.5)
-        if ax_n==2:
-            ax[ax_n].set_xlabel('time (s)', fontsize=8)
-            ax[ax_n].set_ylabel('t-value', fontsize=8)
-        else:
-            plt.setp(ax[ax_n].get_xticklabels(), visible=False)
+        ax[ax_n].set_ylabel('t-value', fontsize=8)
+        plt.setp(ax[ax_n].get_xticklabels(), visible=False)
+        # if ax_n==2:
+        #     ax[ax_n].set_xlabel('time (s)', fontsize=8)
+        #     ax[ax_n].set_ylabel('t-value', fontsize=8)
+        # else:
+        #     plt.setp(ax[ax_n].get_xticklabels(), visible=False)
             
         
         # add area and text of p-value
@@ -291,25 +293,50 @@ def plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, t_min, t_max, 
                 else:  
                     area_ymax, area_ymin = 0, data_orig
                     area_thresh = -threshold
-                    text_position = [np.mean(data_orig.index[labeled_array==n+1])-0.005, -2]
+                    text_position = [np.mean(data_orig.index[labeled_array==n+1])-0.005, -2.5]
                 area_clus = ax[ax_n].fill_between(x=data_orig.index, y1=area_ymax, y2=area_ymin, alpha=0.2, where=labeled_array==n+1, color=line_color)
                 if p_val_list[n]==0:
                     p_val_text='p < 0.001'
                 else:
                     p_val_text='p = '+"{:.3f}".format(p_val_list[n])
-                ax[ax_n].text(text_position[0], text_position[1], p_val_text, fontstyle='italic', rotation = 90, fontsize=4.5)
+                ax[ax_n].text(text_position[0], text_position[1], p_val_text, fontstyle='italic', rotation = 90, fontsize=3.5)
         
         ax_n+=1
         
         # line_thresh = ax.axhline(y = area_thresh, color = '0.8', linestyle = '--', label='cluster threshold')
         # ax.legend([area_clus], ['significant cluster'])
         
+        # plot noise ceiling
+        if ax_n==3:
+            nc_df = nc_df[(nc_df.index>=t_min) & (nc_df.index<=t_max)]
+            x = nc_df.index
+            if 'samePitch[T.True]' in col_name_list:
+                y1 = nc_df['r_samePitch_lowbound_time']
+                y2 = nc_df['r_samePitch_highbound_time']
+            elif 'coch' in col_name_list:
+                y1 = nc_df['r_coch_lowbound_time']
+                y2 = nc_df['r_coch_highbound_time']
+            
+            # make plot
+            ax[ax_n].set_title('noise ceiling', fontdict=({'size':8, 'style':'oblique'}), loc='left')
+            ax[ax_n].spines['bottom'].set_position(('data', 0))
+            ax[ax_n].spines['top'].set_visible(False)
+            ax[ax_n].spines['right'].set_visible(False)
+            ax[ax_n].grid(visible=True, axis='y', linestyle=':', linewidth=0.5, which='major')
+            ax[ax_n].fill_between(nc_df.index, y1, y2, color='tab:gray')
+            ax[ax_n].tick_params(labelsize=6)
+            ax[ax_n].set_xticks([0.1,0.2,0.3,0.4,0.5])
+            ax[ax_n].set_xlim(0,0.5)
+            ax[ax_n].set_yticks([0.15,0.3])
+            ax[ax_n].set_ylabel("Pearson's r", fontsize=8)
+            ax[ax_n].set_xlabel('time (s)', fontsize=8)
+            
     plt.show()
 
 
 # 'samePitch': chroma equivalence
 # 'coch': cochleagram similarity
-model_sel = 'coch' 
+model_sel = 'samePitch' 
 
 if model_sel=='samePitch':
     dir_list = glob.glob(file_folder+perm_folder+fband+ '*samePitch*perm*.csv')
@@ -330,7 +357,12 @@ threshold = 2.5
 t_min = 0
 t_max = 0.5
 
-plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, t_min, t_max, model_name)
+nc_df = pd.read_csv(file_folder+perm_folder+fband+ '_noiseCeiling.csv', index_col=0)
+
+plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, t_min, t_max, model_name, nc_df)
+
+if save_fig:
+    plt.savefig('fig/MLM_'+model_sel+'_'+fband+'.png', format='png', dpi=600)
 
 # %% plot actual MLM prediction
 
