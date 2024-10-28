@@ -506,18 +506,36 @@ def seq_mlm_sepModels(data, n_perm, corr_all):
     df_coch_tvalues = pd.DataFrame()
     df_samePitch_fe = pd.DataFrame()
     df_coch_fe = pd.DataFrame()
+    df_samePitch_r2 = pd.DataFrame()
+    df_coch_r2 = pd.DataFrame()
     
     for m in mdf_samePitch_list:
         df_samePitch_tvalues = pd.concat([df_samePitch_tvalues, pd.DataFrame([m.tvalues[:4]])], ignore_index=True) 
         if n_perm==0:
             df_samePitch_fe = pd.concat([df_samePitch_fe, pd.DataFrame([m.fe_params])], ignore_index=True) 
+            df_samePitch_r2 = pd.concat([df_samePitch_r2, pd.DataFrame(r2_nakagawa(m))], ignore_index=True)
     for m in mdf_coch_list:
         df_coch_tvalues = pd.concat([df_coch_tvalues, pd.DataFrame([m.tvalues[:4]])], ignore_index=True) 
         if n_perm==0:
             df_coch_fe = pd.concat([df_coch_fe, pd.DataFrame([m.fe_params])], ignore_index=True) 
+            df_coch_r2 = pd.concat([df_coch_r2, pd.DataFrame(r2_nakagawa(m))], ignore_index=True)
     
-    return df_samePitch_tvalues, df_coch_tvalues, df_samePitch_fe, df_coch_fe
+    return df_samePitch_tvalues, df_coch_tvalues, df_samePitch_fe, df_coch_fe, df_samePitch_r2, df_coch_r2
 
+
+def r2_nakagawa(model):
+    # see https://stats.stackexchange.com/questions/401584/calculating-r2-for-a-linear-mixed-model-in-python
+    # paper: Nakagawa, S., & Schielzeth, H. (2013). A general and simple method for obtaining R2 from generalized linear mixed‐effects models. Methods in ecology and evolution, 4(2), 133-142.
+    import numpy as np
+    fixed_effects_variance = np.var(model.fittedvalues)  
+    random_effects_variance = model.cov_re.iloc[0, 0] 
+    residual_variance = model.scale  
+
+    # Calculate Marginal and Conditional R^2 from theese extracted variances:
+    R2_m = fixed_effects_variance / (fixed_effects_variance + random_effects_variance + residual_variance)
+    R2_c = (fixed_effects_variance + random_effects_variance) / (fixed_effects_variance + random_effects_variance + residual_variance)
+    R2 = {'R2_m': [R2_m], 'R2_c': [R2_c]}
+    return R2
 
 
 def seq_mlm_noiseCeiling(data, corr_all):
