@@ -5,5 +5,6 @@ __pycache__/
 /Raw_MEG_data/
 /save_fif/
 /sourceSTC20230711_ico3_freqBands_shuffled/
+/fig/
 .DS_Store
 **/.DS_Store
