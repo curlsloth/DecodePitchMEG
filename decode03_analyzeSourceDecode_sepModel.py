@@ -50,6 +50,11 @@ timeAxis = np.round(np.arange(-0.2,0.505,0.005),3)
 
 
 file_folder = 'sourceSTC20230711_ico3_freqBands_shuffled/decodeSource20230711_RidgeCV/auditory_frontal_alpha10^(-2)-10^3_41grid_correctPitchCoefPattern/'
+# perm_folder = 'permutation_MLM_time_sepModels_reFull_spearmanCoch_17subjs/'
+perm_folder = 'permutation_MLM_time_sepModels_reFull_spearmanCoch_17subjs_NC_10k/'
+
+save_fig = True
+
 
 def load_data(subCode, file_folder, fband):
     # fband = 'delta', 'theta', 'alpha', 'beta', and 'gamma'
@@ -79,22 +84,24 @@ def load_data(subCode, file_folder, fband):
 
 # %% cluter permutation test on the overall pitch decoding accuracy
 
-fband = 'gamma'
+fband = 'beta'
 scores_pitch_all, _ = load_data(subCode, file_folder, fband)
 
-width_threshold = 1
-threshold=t.isf(0.05/2,len(subCode)-1)
+width_threshold = 5
+# threshold=t.isf(0.05/2,len(score_pair)-1)
+threshold=2.5
 cluster_threshold = 0.01
 exclude=timeAxis<0
+n_permutations=10000
 
 score_subj = np.nanmean(scores_pitch_all, axis = (1,3,4))
-t_obs, clusters, cluster_pv, H0 = permutation_cluster_1samp_test(X=score_subj-0.5, threshold=threshold, exclude=exclude, tail=0, n_permutations=5000, n_jobs=-1, seed=23)
+t_obs, clusters, cluster_pv, H0 = permutation_cluster_1samp_test(X=score_subj-0.5, threshold=threshold, exclude=exclude, tail=0, n_permutations=n_permutations, n_jobs=-1, seed=23)
 
 
 fig, ax = plt.subplots(1, figsize=(6, 3.5))
 plt.style.use('seaborn-paper')
 line_subj = ax.plot(timeAxis, score_subj.T, color='k', alpha = 0.2, label='participant',zorder=2)
-line_mean = ax.plot(timeAxis, score_subj.mean(axis=0), color='m', linewidth=3, label='mean',zorder=10)
+line_mean = ax.plot(timeAxis, score_subj.mean(axis=0), color='r', linewidth=3, label='mean',zorder=10)
 line_chance = ax.axhline(.5, color='k', linestyle='--', linewidth=1, label='chance',zorder=1)
 ax.axvline(0, color='k', linewidth=1)
 # area_abovechance = ax.axvspan(xmin=t_min, xmax=t_max, ymin=0, ymax=1, color='b', alpha=0.15)
@@ -110,12 +117,14 @@ ax.legend([line_subj[0], line_mean[0], area_abovechance],['participant mean','gr
 
 if fband == 'gamma':
     fband = 'low '+fband
-ax.set_title(fband, fontsize=10)
+ax.set_title(fband, fontsize=20)
 ax.set_xlabel('time (s)', fontsize=8)
 ax.set_ylabel('ROC-AUC', fontsize=8)
 ax.tick_params(labelsize=6)
 
-plt.savefig('fig2/bySubject_'+fband+'.png', format='png', dpi=600)
+
+if save_fig:
+    plt.savefig('fig/bySubject_'+fband+'.png', format='png', dpi=600)
 
 # %% plot by-pair AUC time series
 
@@ -132,14 +141,16 @@ for n1 in range(8):
 score_pair = np.vstack(score_pair)
 dist_list = np.hstack(dist_list)
 
-width_threshold = 1
-threshold=t.isf(0.05/2,len(score_pair)-1)
+width_threshold = 5
+# threshold=t.isf(0.05/2,len(score_pair)-1)
+threshold=2.5
 cluster_threshold = 0.01
 exclude=timeAxis<0
+n_permutations=10000
 
 segs = [np.column_stack([timeAxis, y]) for y in score_pair]
         
-t_obs, clusters, cluster_pv, H0 = permutation_cluster_1samp_test(X=score_pair-0.5, threshold=threshold, exclude=exclude, tail=0, n_permutations=5000, n_jobs=-1, seed=23)
+t_obs, clusters, cluster_pv, H0 = permutation_cluster_1samp_test(X=score_pair-0.5, threshold=threshold, exclude=exclude, tail=0, n_permutations=n_permutations, n_jobs=-1, seed=23)
 
 
 
@@ -164,7 +175,7 @@ if show_colorbar:
     axcb.ax.tick_params(labelsize=6)
 
 
-line_mean = ax.plot(timeAxis, score_pair.mean(axis=0), color='m', linewidth=3, label='mean',zorder=10)
+line_mean = ax.plot(timeAxis, score_pair.mean(axis=0), color='r', linewidth=3, label='mean',zorder=10)
 line_chance = ax.axhline(.5, color='k', linestyle='--', label='chance',zorder=5, linewidth=1)
 ax.axvline(0, color='k', linewidth=1)
 for n in range(len(clusters)):
@@ -180,34 +191,68 @@ ax.legend([line_mean[0], area_abovechance],['grand mean', 'p < 0.01'], loc='best
 
 if fband == 'gamma':
     fband = 'low '+fband
-ax.set_title(fband, fontsize=10)
+ax.set_title(fband, fontsize=20)
 ax.set_xlabel('time (s)', fontsize=8)
 ax.set_ylabel('ROC-AUC', fontsize=8)
 ax.tick_params(labelsize=6)
 
-plt.savefig('fig2/byItem_'+fband+'.png', format='png', dpi=600)
+if save_fig:
+    plt.savefig('fig/byItem_'+fband+'.png', format='png', dpi=600)
 
 
 # %% write a bootstrapping method
 # read the files produced by decode02_HPC_pitchMLM_permutation.py
 
    
-def cal_clu_stats(data, threshold):
+# def cal_clu_stats(data, threshold):
+#     from scipy.ndimage import label
+#     import numpy as np
+#     mask_tt = np.abs(data)>=threshold
+#     labeled_array, num_features = label(mask_tt)
+#     temp_clus = []
+#     for mask_n in range(1,num_features+1):
+#         temp_clus.append(np.sum(data[labeled_array==mask_n]))
+#     return temp_clus, labeled_array
+
+def cal_clu_stats(data, threshold, width_threshold):
     from scipy.ndimage import label
     import numpy as np
     mask_tt = np.abs(data)>=threshold
     labeled_array, num_features = label(mask_tt)
     temp_clus = []
     for mask_n in range(1,num_features+1):
-        temp_clus.append(np.sum(data[labeled_array==mask_n]))
+        if sum(labeled_array==mask_n) >= width_threshold:
+            temp_clus.append(np.sum(data[labeled_array==mask_n]))
+        else: 
+            temp_clus.append(0)
     return temp_clus, labeled_array
 
+def plot_nc(nc_df, t_min, t_max, ax_n):
+    nc_df = nc_df[(nc_df.index>=t_min) & (nc_df.index<=t_max)]
+    if 'samePitch[T.True]' in col_name_list:
+        y1 = nc_df['r_samePitch_lowbound_time']
+        y2 = nc_df['r_samePitch_highbound_time']
+    elif 'coch' in col_name_list:
+        y1 = nc_df['r_coch_lowbound_time']
+        y2 = nc_df['r_coch_highbound_time']
+    
+    # make plot
+    ax[ax_n].set_title('noise ceiling', fontdict=({'size':8, 'style':'oblique'}), loc='left')
+    ax[ax_n].spines['bottom'].set_position(('data', 0))
+    ax[ax_n].spines['top'].set_visible(False)
+    ax[ax_n].spines['right'].set_visible(False)
+    ax[ax_n].grid(visible=True, axis='y', linestyle=':', linewidth=0.5, which='major')
+    ax[ax_n].fill_between(nc_df.index, y1, y2, color='tab:gray')
+    ax[ax_n].tick_params(labelsize=6)
+    ax[ax_n].set_xticks([0.1,0.2,0.3,0.4,0.5])
+    ax[ax_n].set_xlim(0,0.5)
+    ax[ax_n].set_yticks([0.15,0.3])
+    ax[ax_n].set_ylabel("Pearson's r", fontsize=8)
+    ax[ax_n].set_xlabel('time (s)', fontsize=8)
 
-
-def plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, t_min, t_max, model_name):
+def plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, width_threshold, t_min, t_max, model_name, samePitch_r2_df, coch_r2_df):
     plt.style.use('seaborn-notebook')
-    fig, ax = plt.subplots(3,1, figsize=(4, 5))
-    fig.tight_layout()
+    fig, ax = plt.subplots(4,1, figsize=(3.5, 5), gridspec_kw={'height_ratios': [2, 2, 2, 0.8]})
     ax_n=0
     for col_name in col_name_list:
         clus_stats_perm = []
@@ -215,7 +260,7 @@ def plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, t_min, t_max, 
             df = pd.read_csv(nFile, index_col=(0)) 
             data = df[col_name]
             data = data[(data.index>=t_min) & (data.index<=t_max)]
-            temp_clus_stats, _ = cal_clu_stats(data, threshold)
+            temp_clus_stats, _ = cal_clu_stats(data, threshold, width_threshold)
             try:
                 max_clus_stats = max(temp_clus_stats, key=abs)
             except:
@@ -224,14 +269,16 @@ def plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, t_min, t_max, 
             
         data_orig = df_tvalues[col_name]
         data_orig = data_orig[(data_orig.index>=t_min) & (data_orig.index<=t_max)]
-        clus_stats_orig_list, labeled_array = cal_clu_stats(data_orig, threshold)
+        clus_stats_orig_list, labeled_array = cal_clu_stats(data_orig, threshold, width_threshold)
         
         p_val_list = []
         for clus_stats_orig in clus_stats_orig_list:
             if clus_stats_orig > 0:
                 p_val = np.mean(np.array(clus_stats_perm)>clus_stats_orig)*2
-            elif clus_stats_orig <= 0:
+            elif clus_stats_orig < 0:
                 p_val = np.mean(np.array(clus_stats_perm)<clus_stats_orig)*2
+            else:
+                p_val = 1
             print('permutation p-value (2-tailed): '+str(p_val))
             p_val_list.append(p_val)
         
@@ -263,11 +310,13 @@ def plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, t_min, t_max, 
         ax[ax_n].tick_params(labelsize=6)
         ax[ax_n].set_xticks([0.1,0.2,0.3,0.4,0.5])
         ax[ax_n].set_xlim(0,0.5)
-        if ax_n==2:
-            ax[ax_n].set_xlabel('time (s)', fontsize=8)
-            ax[ax_n].set_ylabel('t-value', fontsize=8)
-        else:
-            plt.setp(ax[ax_n].get_xticklabels(), visible=False)
+        ax[ax_n].set_ylabel('t-value', fontsize=8)
+        plt.setp(ax[ax_n].get_xticklabels(), visible=False)
+        # if ax_n==2:
+        #     ax[ax_n].set_xlabel('time (s)', fontsize=8)
+        #     ax[ax_n].set_ylabel('t-value', fontsize=8)
+        # else:
+        #     plt.setp(ax[ax_n].get_xticklabels(), visible=False)
             
         
         # add area and text of p-value
@@ -283,44 +332,91 @@ def plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, t_min, t_max, 
                     area_thresh = -threshold
                     text_position = [np.mean(data_orig.index[labeled_array==n+1])-0.005, -2]
                 area_clus = ax[ax_n].fill_between(x=data_orig.index, y1=area_ymax, y2=area_ymin, alpha=0.2, where=labeled_array==n+1, color=line_color)
-                if p_val_list[n]==0:
-                    p_val_text='p < 0.001'
+                if p_val_list[n]<0.001:
+                    p_val_text='p < .001'
                 else:
-                    p_val_text='p = '+str(round(p_val_list[n],3))
-                ax[ax_n].text(text_position[0], text_position[1], p_val_text, fontstyle='italic', rotation = 90, fontsize=4.5)
+                    p_val_text='p = '+"{:.3f}".format(p_val_list[n]).lstrip('0')
+                ax[ax_n].text(text_position[0], text_position[1], p_val_text, fontstyle='italic', rotation = 90, fontsize=3.5)
         
         ax_n+=1
         
         # line_thresh = ax.axhline(y = area_thresh, color = '0.8', linestyle = '--', label='cluster threshold')
         # ax.legend([area_clus], ['significant cluster'])
         
+        
+        if ax_n==3:
+            # plot_nc(nc_df, t_min, t_max, ax_n) # plot leave-one-out noise ceiling (not use)
+            samePitch_r2_df = samePitch_r2_df[(samePitch_r2_df.index>=t_min) & (samePitch_r2_df.index<=t_max)]
+            coch_r2_df = coch_r2_df[(coch_r2_df.index>=t_min) & (coch_r2_df.index<=t_max)]
+
+            if 'samePitch[T.True]' in col_name_list:
+                y_m = samePitch_r2_df['R2_m']
+                y_c = samePitch_r2_df['R2_c']
+            elif 'coch' in col_name_list:
+                y_m = coch_r2_df['R2_m']
+                y_c = coch_r2_df['R2_c']
+            
+            # make plot
+            # ax[ax_n].set_title('noise ceiling', fontdict=({'size':8, 'style':'oblique'}), loc='left')
+            ax[ax_n].spines['bottom'].set_position(('data', 0))
+            ax[ax_n].spines['top'].set_visible(False)
+            ax[ax_n].spines['right'].set_visible(False)
+            # ax[ax_n].grid(visible=True, axis='y', linestyle=':', linewidth=0.5, which='major')
+            ax[ax_n].plot(samePitch_r2_df.index, y_m, label = "marginal", color='black', linewidth=1)
+            ax[ax_n].plot(samePitch_r2_df.index, y_c, label = "conditional", color='tab:gray', linewidth=1)
+            ax[ax_n].legend(fontsize=4, bbox_to_anchor=(0.5, 1.5), loc='upper center', ncol=2)
+            # ax[ax_n].legend(fontsize=4, ncol=2)
+            ax[ax_n].tick_params(labelsize=6)
+            ax[ax_n].set_xticks([0.1,0.2,0.3,0.4,0.5])
+            ax[ax_n].set_xlim(0,0.5)
+            # ax[ax_n].set_yticks([0.15,0.3])
+            ax[ax_n].set_ylabel("$R^2$", fontsize=8)
+            ax[ax_n].set_xlabel('time (s)', fontsize=8)
+            
+    plt.tight_layout()
     plt.show()
+
 
 
 # 'samePitch': chroma equivalence
 # 'coch': cochleagram similarity
-model_sel = 'samePitch' 
-
-if model_sel=='samePitch':
-    dir_list = glob.glob(file_folder+'permutation_MLM_time_sepModels_reFull_spearmanCoch_17subjs/'+fband+ '*samePitch*perm*.csv')
-    dir_orig = glob.glob(file_folder+'permutation_MLM_time_sepModels_reFull_spearmanCoch_17subjs/'+fband+ '*samePitch*orig*.csv')
-    col_name_list = ['pitchDist','samePitch[T.True]','pitchDist:samePitch[T.True]']
-    model_name=''
-elif model_sel=='coch':
-    dir_list = glob.glob(file_folder+'permutation_MLM_time_sepModels_reFull_spearmanCoch_17subjs/'+fband+ '*coch*perm*.csv')
-    dir_orig = glob.glob(file_folder+'permutation_MLM_time_sepModels_reFull_spearmanCoch_17subjs/'+fband+ '*coch*orig*.csv')
-    col_name_list = ['pitchDist','coch','pitchDist:coch']
-    model_name=''
-
-    
-df_tvalues = pd.read_csv(dir_orig[0], index_col=(0)) 
+# model_sel = 'samePitch' 
+# fband = 'delta'
 
 # threshold = t.isf(0.05/2,len(subCode)-1)
 threshold = 2.5
+width_threshold=5
+
 t_min = 0
 t_max = 0.5
 
-plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, t_min, t_max, model_name)
+for model_sel in ['samePitch', 'coch']:
+    for fband in ['delta','theta','alpha']:
+        if model_sel=='samePitch':
+            dir_list = glob.glob(file_folder+perm_folder+fband+ '_samePitch_perm-tval-time*.csv')
+            dir_orig = glob.glob(file_folder+perm_folder+fband+ '_samePitch_orig-tval-time.csv')
+            col_name_list = ['pitchDist','samePitch[T.True]','pitchDist:samePitch[T.True]']
+            model_name=''
+        elif model_sel=='coch':
+            dir_list = glob.glob(file_folder+perm_folder+fband+ '_coch_perm-tval-time*.csv')
+            dir_orig = glob.glob(file_folder+perm_folder+fband+ '_coch_orig-tval-time.csv')
+            col_name_list = ['pitchDist','coch','pitchDist:coch']
+            model_name=''
+        
+            
+        df_tvalues = pd.read_csv(dir_orig[0], index_col=(0)) 
+        
+        
+        
+        nc_df = pd.read_csv(file_folder+perm_folder+fband+ '_noiseCeiling.csv', index_col=0) # not used
+        samePitch_r2_df = pd.read_csv(file_folder+perm_folder+fband+ '_samePitch_orig-R2-time.csv', index_col=0)
+        coch_r2_df = pd.read_csv(file_folder+perm_folder+fband+ '_coch_orig-R2-time.csv', index_col=0)
+        
+        plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, width_threshold, t_min, t_max, model_name, samePitch_r2_df, coch_r2_df)
+        
+        if save_fig:
+            plt.savefig('fig/MLM_'+model_sel+'_'+fband+'_threshold'+str(threshold)+'_widthThreshold'+str(width_threshold)+'.png', format='png', dpi=600)
+            plt.close('all')
 
 # %% plot actual MLM prediction
 
@@ -400,7 +496,6 @@ scores_pitch_all, score_tempGen_pitch_all = load_data(subCode, file_folder, fban
 
 tempGen_list = []
 pitch_mingap=3
-contour_p = 0.01
 
 for n1 in range(score_tempGen_pitch_all.shape[4]-pitch_mingap):
     for n2 in range(n1+pitch_mingap, score_tempGen_pitch_all.shape[5]):
@@ -417,45 +512,62 @@ mask2D = (xx<0) + (yy<0)
 
 result=stats.ttest_1samp(tempGen_mat, 0.5, alternative='greater')
 
-# T_obs, clusters, cluster_p_values, H0 = permutation_cluster_1samp_test(tempGen_mat-0.5, n_permutations=5000, n_jobs=-1, exclude=mask2D)
-# tempGen_sig_plot = np.nan * np.ones_like(T_obs)
-# for c, p_val in zip(clusters, cluster_p_values):
-#     if p_val <= 0.05:
-#         tempGen_sig_plot[c] = tempGen_mean[c]
 
 limit = max(abs(np.min(tempGen_mean)-0.5), abs(np.max(tempGen_mean)-0.5) )
 
-fig, ax = plt.subplots()
-im = ax.matshow(
-    tempGen_mean,
-    vmin=0.5-limit,
-    vmax=0.5+limit,
-    cmap="RdBu_r",
-    origin="lower",
-    extent=[timeAxis[0], timeAxis[-1], timeAxis[0], timeAxis[-1]],
-    aspect='equal'
-)
-contour = ax.contour(
-    np.where(mask2D, np.nan, result.pvalue),
-    # result.pvalue * np.logical_not(mask2D),
-    # result.statistic>2.5,
-    # tempGen_sig_plot>0,
-    levels=[0.01],
-    origin="lower",
-    colors='k',
-    linewidths=1,
-    extent=[timeAxis[0], timeAxis[-1], timeAxis[0], timeAxis[-1]],
+
+def plot_tempGen(fdr_bool):
+    
+    if fdr_bool == False:
+        p_val=result.pvalue
+        levels=[0.005, 0.01]
+        legend_title=""
+    elif fdr_bool == True:
+        from statsmodels.stats.multitest import fdrcorrection
+        _, p_corrected = fdrcorrection(result.pvalue[mask2D==False], alpha=0.05, method='i', is_sorted=False)
+        p_val = result.pvalue.copy()
+        p_val[-101:,-101:] = p_corrected.reshape(101,101)
+        levels=[0.03, 0.04, 0.05]
+        legend_title="FDR-corrected"
+    
+    fig, ax = plt.subplots(figsize = (5,7))
+    im = ax.matshow(
+        tempGen_mean,
+        vmin=0.5-limit,
+        vmax=0.5+limit,
+        cmap="RdBu_r",
+        origin="lower",
+        extent=[timeAxis[0], timeAxis[-1], timeAxis[0], timeAxis[-1]],
+        aspect='equal'
     )
-ax.axhline(0.0, color="k",lw=1,ls=':')
-ax.axvline(0.0, color="k",lw=1,ls=':')
-ax.xaxis.set_ticks_position("bottom")
-ax.set_xlabel('Testing time (s)')
-ax.set_ylabel('Training time (s)')
-h,l = contour.legend_elements('p')
-ax.legend(h,l,loc='lower right')
-# ax.set_title("Generalization across time and condition", fontweight="bold")
-fig.colorbar(im, ax=ax, label="Mean performance (ROC-AUC)")
-plt.show()
+    contour = ax.contour(
+        np.where(mask2D, np.nan, p_val),
+        # result.pvalue * np.logical_not(mask2D),
+        # result.statistic>2.5,
+        # tempGen_sig_plot>0,
+        levels=levels,
+        origin="lower",
+        colors=['k','dimgrey','silver'],
+        linewidths=1,
+        # linestyles=['solid','dotted'],
+        extent=[timeAxis[0], timeAxis[-1], timeAxis[0], timeAxis[-1]],
+        )
+    ax.axhline(0.0, color="k",lw=1,ls=':')
+    ax.axvline(0.0, color="k",lw=1,ls=':')
+    ax.xaxis.set_ticks_position("bottom")
+    ax.set_xlabel('Testing time (s)')
+    ax.set_ylabel('Training time (s)')
+    h,l = contour.legend_elements('p')
+    ax.legend(h,l,loc='lower right',title=legend_title,fontsize=8,title_fontsize=8)
+    # ax.set_title("Generalization across time and condition", fontweight="bold")
+    fig.colorbar(im, ax=ax, label="Mean performance (ROC-AUC)")
+    plt.tight_layout()
+    plt.show()
+
+plot_tempGen(fdr_bool=True)
+
+if save_fig:
+    plt.savefig('fig/tempGen_'+fband+'.fit', format='png', dpi=600)
 
 # %% multidimemsional scaling
 

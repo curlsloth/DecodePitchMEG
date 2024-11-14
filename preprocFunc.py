@@ -466,7 +466,7 @@ def seq_mlm_sepModels(data, n_perm, corr_all):
     mdf_coch_list =[]
 
     for nt in range(data.shape[1]):
-        pitchDist = []
+        # pitchDist = []
         pitchDist = pd.DataFrame()
         score_pitch_ind = data[:,nt,:,:]
             
@@ -506,17 +506,135 @@ def seq_mlm_sepModels(data, n_perm, corr_all):
     df_coch_tvalues = pd.DataFrame()
     df_samePitch_fe = pd.DataFrame()
     df_coch_fe = pd.DataFrame()
+    df_samePitch_r2 = pd.DataFrame()
+    df_coch_r2 = pd.DataFrame()
     
     for m in mdf_samePitch_list:
         df_samePitch_tvalues = pd.concat([df_samePitch_tvalues, pd.DataFrame([m.tvalues[:4]])], ignore_index=True) 
         if n_perm==0:
             df_samePitch_fe = pd.concat([df_samePitch_fe, pd.DataFrame([m.fe_params])], ignore_index=True) 
+            df_samePitch_r2 = pd.concat([df_samePitch_r2, pd.DataFrame(r2_nakagawa(m))], ignore_index=True)
     for m in mdf_coch_list:
         df_coch_tvalues = pd.concat([df_coch_tvalues, pd.DataFrame([m.tvalues[:4]])], ignore_index=True) 
         if n_perm==0:
             df_coch_fe = pd.concat([df_coch_fe, pd.DataFrame([m.fe_params])], ignore_index=True) 
+            df_coch_r2 = pd.concat([df_coch_r2, pd.DataFrame(r2_nakagawa(m))], ignore_index=True)
     
-    return df_samePitch_tvalues, df_coch_tvalues, df_samePitch_fe, df_coch_fe
+    return df_samePitch_tvalues, df_coch_tvalues, df_samePitch_fe, df_coch_fe, df_samePitch_r2, df_coch_r2
+
+
+def r2_nakagawa(model):
+    # see https://stats.stackexchange.com/questions/401584/calculating-r2-for-a-linear-mixed-model-in-python
+    # paper: Nakagawa, S., & Schielzeth, H. (2013). A general and simple method for obtaining R2 from generalized linear mixed‐effects models. Methods in ecology and evolution, 4(2), 133-142.
+    import numpy as np
+    fixed_effects_variance = np.var(model.fittedvalues)  
+    random_effects_variance = model.cov_re.iloc[0, 0] 
+    residual_variance = model.scale  
+
+    # Calculate Marginal and Conditional R^2 from theese extracted variances:
+    R2_m = fixed_effects_variance / (fixed_effects_variance + random_effects_variance + residual_variance)
+    R2_c = (fixed_effects_variance + random_effects_variance) / (fixed_effects_variance + random_effects_variance + residual_variance)
+    R2 = {'R2_m': [R2_m], 'R2_c': [R2_c]}
+    return R2
+
+
+def seq_mlm_noiseCeiling(data, corr_all):
+    import numpy as np
+    import pandas as pd
+    from scipy import stats
+    import statsmodels.formula.api as smf
+    
+    import warnings
+    warnings.filterwarnings("ignore")
+
+    r_samePitch_lowbound_time = []
+    r_samePitch_highbound_time = []
+    r_coch_lowbound_time = []
+    r_coch_highbound_time = []
+    for nt in range(data.shape[1]):
+        print('time: ', str(nt))
+        pitchDist = pd.DataFrame()
+        score_pitch_ind = data[:,nt,:,:]
+            
+        for n0 in range(np.shape(score_pitch_ind)[0]):
+            for n1 in range(np.shape(score_pitch_ind)[1]):
+                for ploc in range(n1+1,8):
+                    # the unit of pitchDist has been modified to octave (Oct 17, 2023)
+                    df = {'sub': n0, 'pitchDist': (ploc-n1)/3, 'samePitch': (ploc-n1==3 or ploc-n1==6), 'auc': score_pitch_ind[n0,n1,ploc], 'coch': corr_all[n1,ploc]}
+
+                    pitchDist = pd.concat([pitchDist, pd.DataFrame([df])], ignore_index = True)
+        
+        pitchDist[['sub','samePitch']] = pitchDist[['sub','samePitch']].astype('category')
+        
+        r_samePitch_lowbound = []
+        r_samePitch_highbound = []
+        r_coch_lowbound = []
+        r_coch_highbound = []
+        for n_sub in range(data.shape[0]):
+            pitchDist_LOO = pitchDist[pitchDist['sub']!=n_sub] # leave one out
+            pitchDist_O = pitchDist[pitchDist['sub']==n_sub] # the left one
+            
+            for nc_bound in ['low','high']:
+                
+                if nc_bound == 'low':
+                    df = pitchDist_LOO
+                elif nc_bound == 'high':
+                    df = pitchDist
+
+                md_samePitch = smf.mixedlm('auc ~ pitchDist + samePitch + pitchDist*samePitch', data=df, groups=df['sub'], re_formula='~pitchDist + samePitch + pitchDist*samePitch')
+                md_coch = smf.mixedlm('auc ~ pitchDist + coch + pitchDist*coch', data=df, groups=df['sub'], re_formula='~pitchDist + coch + pitchDist*coch')
+                
+                try: 
+                    mdf_samePitch = md_samePitch.fit(disp=False)
+                    mdf_coch = md_coch.fit(disp=False)
+                except: # very few cases it will get singular
+                    import random
+                    for nRow in range(len(pitchDist)):
+                        pitchDist['auc'].iloc[nRow] += (random.random()-0.5)*0.0002 # if getting singular, add 0.001 jitter to the data 
+                    md_samePitch = smf.mixedlm('auc ~ pitchDist + samePitch + pitchDist*samePitch', data=df, groups=df['sub'], re_formula='~pitchDist + samePitch + pitchDist*samePitch')
+                    md_coch = smf.mixedlm('auc ~ pitchDist + coch + pitchDist*coch', data=df, groups=df['sub'], re_formula='~pitchDist + coch + pitchDist*coch')
+                    mdf_samePitch = md_samePitch.fit(disp=False)
+                    mdf_coch = md_coch.fit(disp=False)
+                
+                fe_samePitch = mdf_samePitch.fe_params
+                fe_coch = mdf_coch.fe_params
+                
+                pred_samePitch = fe_samePitch['Intercept'] + \
+                    fe_samePitch['samePitch[T.True]']*(pitchDist_O['samePitch']==True) + \
+                    fe_samePitch['pitchDist']*pitchDist_O['pitchDist'] + \
+                    fe_samePitch['pitchDist:samePitch[T.True]']*(pitchDist_O['pitchDist'] * (pitchDist_O['samePitch']==True))
+                pred_coch = fe_coch['Intercept'] + \
+                    fe_coch['coch']*pitchDist_O['coch'] + \
+                    fe_coch['pitchDist']*pitchDist_O['pitchDist'] + \
+                    fe_coch['pitchDist:coch']*(pitchDist_O['pitchDist'] * pitchDist_O['coch'])
+                
+                r_samePitch, _ = stats.pearsonr(pred_samePitch, pitchDist_O['auc'])
+                r_coch, _ = stats.pearsonr(pred_coch, pitchDist_O['auc'])
+                
+                if nc_bound == 'low':
+                    r_samePitch_lowbound.append(r_samePitch)
+                    r_coch_lowbound.append(r_coch)
+                elif nc_bound == 'high':
+                    r_samePitch_highbound.append(r_samePitch)
+                    r_coch_highbound.append(r_coch)
+                    
+    
+        r_samePitch_lowbound_time.append(np.mean(r_samePitch_lowbound))
+        r_samePitch_highbound_time.append(np.mean(r_samePitch_highbound))
+        r_coch_lowbound_time.append(np.mean(r_coch_lowbound))
+        r_coch_highbound_time.append(np.mean(r_coch_highbound))
+        
+    
+    noiseCeiling_df = pd.DataFrame({
+        'r_samePitch_lowbound_time':r_samePitch_lowbound_time,
+        'r_samePitch_highbound_time':r_samePitch_highbound_time,
+        'r_coch_lowbound_time':r_coch_lowbound_time,
+        'r_coch_highbound_time':r_coch_highbound_time
+        })
+    
+    return noiseCeiling_df
+
+    
 
 # %% return ERP
 def get_ERP(raw, ica_exclude, save_dir, subject):

@@ -177,6 +177,42 @@ ax.set_title('Same chroma')
 # cbar.set_ticks([0, 1])  # Place ticks at the middle of each color bin (0 and 1 in this case)
 # cbar.set_ticklabels(['False', 'True'])
 
+# %% calculate multicollinearity between height, chroma and cochleagram
+
+height = pitch_dist_mat[mask==False]
+chroma = bool_array[mask==False]
+cochleagram = corr_mean_pitch[mask==False]
+
+## VIF
+# load statmodels functions
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+data = pd.DataFrame()
+data['height'] = height
+data['chroma'] = chroma*1.0
+data['cochleagram'] = cochleagram
+
+# compute the vif for all given features
+def compute_vif(considered_features, data):
+    
+    X = data[considered_features]
+    X['interaction'] = X[considered_features[0]]*X[considered_features[1]]
+    # the calculation of variance inflation requires a constant
+    X['intercept'] = 1
+    
+    # create dataframe to store vif values
+    vif = pd.DataFrame()
+    vif["Variable"] = X.columns
+    vif["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+    vif = vif[vif['Variable']!='intercept']
+    return vif
+
+
+# compute vif 
+compute_vif(['height', 'chroma'], data).sort_values('VIF', ascending=False)
+compute_vif(['height', 'cochleagram'], data).sort_values('VIF', ascending=False)
+
+
 # %% plot ERF
 import os
 import numpy as np
