@@ -191,6 +191,8 @@ vis_brain(stc_feat, t_min=0.18, t_max=0.23, clim=[1.8,1.9,2], view=2)
 
 # %% weight time series
 
+import seaborn as sns
+
 roi_coef_time=[]
 roi_name_list=[]
 for label in roi_list:
@@ -204,34 +206,45 @@ column_sums = np.sum(roi_coef_time, axis=0)
 roi_coef_time_norm = roi_coef_time / column_sums
 # roi_coef_time_norm = roi_coef_time
 
+df = pd.DataFrame(
+    {'data': np.concatenate([x for x in roi_coef_time_norm]),
+     'time': np.tile(timeAxis, 12),
+     'roi_name': [item for item in roi_name_list for _ in range(roi_coef_time_norm.shape[1])]
+     }
+     )
 
+df['Region'] = df['roi_name'].str[:-2]
+df['Hemisphere'] = df['roi_name'].str[-1:]
 
 with plt.style.context('seaborn-notebook'):
     plt.rcParams['figure.dpi'] = 300
     plt.rcParams['savefig.dpi'] = 300
     colors = pl.cm.tab10(np.linspace(0,1,6))
     
-    fig, ax = plt.subplots(1,1, figsize=(4.5, 3.5))
-    
-    for n in range(6):
-        ax.plot(timeAxis,roi_coef_time_norm[n*2,:].T, ':', color=colors[n], label=roi_name_list[n*2],lw=1.5)
-        ax.plot(timeAxis,roi_coef_time_norm[(n*2)+1,:].T, color=colors[n], label=roi_name_list[(n*2)+1],lw=1.5)
+    fig, ax = plt.subplots(1,1, figsize=(7, 4))
 
-    line_chance = ax.axhline(1/12, color='k', linestyle='--',zorder=5, lw=0.75)
-    ax.axvline(0, color='k', lw=0.75)
+    p = sns.lineplot(data=df, x='time', y='data', hue='Region', style='Hemisphere', ax=ax)
+    # p.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    line_chance = ax.axhline(1/12, color='k', linestyle='-',zorder=5, lw=0.75)
+
     
-    ax.set_yticks([0.08,0.082,0.084,0.086,0.088])
-    ax.set_yticklabels(['8.0', '8.2', '8.4', '8.6', '8.8'], fontsize=8)
+    ax.set_yticks([0.08,0.085,0.09, 1/12])
+    ax.set_yticklabels(['8.0', '8.5', '9.0', r'$BL$'], fontsize=8)
     ax.set_ylabel('proportional absolute weight (%)', fontsize=8)
+    ax.set_xticks([-0.2,-0.1,0,0.1,0.2,0.3,0.4,0.5])
     ax.set_xlabel('time (s)', fontsize=8)
     ax.tick_params(labelsize=8)
     ax.set_xlim(-0.2, 0.5)
+    
+    ax.legend(fontsize=7, framealpha=0)
 
-    ax.legend(fontsize=4, framealpha=1)
     fig.tight_layout()
-    plt.show() 
+    
+    plt.show()
 
-# %%
+    plt.savefig('fig/weight_time.png', format='png', dpi=600)
+
+# %%  violin plots
 
 roi_coef_ind=[]
 
@@ -274,9 +287,6 @@ def coef_df(roi_coef_ind_norm, timeAxis, t1, t2):
     
     temp_roi_df_melt['Hemisphere']=temp_roi_df_melt['variable'].str[-2:]
     temp_roi_df_melt['Cortex'] = temp_roi_df_melt['variable'].str[:-10]
-    # for n in range(len(temp_roi_df_melt)):
-    #     temp_roi_df_melt['hemisphere'][n] = temp_roi_df_melt['variable'][n][-2:]
-    #     temp_roi_df_melt['cortex'][n] = temp_roi_df_melt['variable'][n][:-10]
     
     temp_roi_df_melt.replace({'lh': 'L', 'rh': 'R'}, inplace=True)
     temp_roi_df_melt.drop(columns=['variable'], inplace=True)
@@ -300,7 +310,6 @@ roi_df_melt_diff = roi_df_melt_1.copy().drop(columns='Time')
 roi_df_melt_diff['value']=roi_df_melt_2['value']-roi_df_melt_1['value']
 
 roi_df_melt = pd.concat([roi_df_melt_1,roi_df_melt_2],ignore_index=True)
-# roi_df_melt = pd.concat([roi_df_melt_1mB,roi_df_melt_2mB],ignore_index=True)
 
 with plt.style.context('seaborn-notebook'):
     plt.rcParams['figure.dpi'] = 300
@@ -313,56 +322,17 @@ with plt.style.context('seaborn-notebook'):
         custom_palette = {'height': 'cyan', 'chroma': 'pink'}
         sns.violinplot(data=roi_df_melt[roi_df_melt['Cortex']==temp_label], x="Hemisphere", y="value", hue="Time", inner='point', ax=temp_ax, width=0.5, linewidth=1, palette=custom_palette, cut=0)
         temp_ax.tick_params(labelsize=6)   
-        temp_ax.legend(fontsize=5, framealpha=1,loc='upper center')
-        temp_ax.set_ylabel('proportional absolute weight (%)',fontsize=5)
+        temp_ax.legend(fontsize=6.5, framealpha=0,loc='upper center')
+        temp_ax.set_ylabel('proportional absolute weight (%)',fontsize=6)
         temp_ax.set_xlabel('')
         temp_ax.axhline(100/12, color='k', linestyle=':',zorder=0, lw=1)
-        # temp_ax.set_ylim(7.3,10.7)
-        # temp_ax.set_yticks([7.5,8.5,9.5,10.5])
         temp_ax.set_title(temp_label,fontsize=7)
         
     fig.tight_layout()
     plt.show()
+    plt.savefig('fig/weight_violins.png', format='png', dpi=600)
 
 
-# # plot difference individually
-# with plt.style.context('seaborn-notebook'):
-#     plt.rcParams['figure.dpi'] = 300
-#     plt.rcParams['savefig.dpi'] = 300
-#     fig, ax = plt.subplots(2,3, figsize=(8, 4))
-#     label_list = ['Early Auditory', 'Auditory Association','Orbital and Polar Frontal','Insular and Frontal Opercular','Inferior Frontal','DorsoLateral Prefrontal']
-#     for c in range(len(label_list)):
-#         temp_label=label_list[c]
-#         temp_ax=ax[c//3,c%3]
-#         custom_palette = {'L': 'cyan', 'R': 'pink'}
-#         sns.violinplot(data=roi_df_melt_diff[roi_df_melt_diff['Cortex']==temp_label], x="Hemisphere", y="value", inner='point', ax=temp_ax, width=0.5, linewidth=1, palette=custom_palette, cut=0)
-#         temp_ax.tick_params(labelsize=6)   
-#         # temp_ax.legend(fontsize=5, framealpha=1,loc='lower center')
-#         temp_ax.set_ylabel('weight change: late - early (%)',fontsize=5)
-#         temp_ax.set_xlabel('')
-#         temp_ax.axhline(0, color='k', linestyle=':',zorder=0, lw=1)
-#         temp_ax.set_title(temp_label,fontsize=7)
-        
-#     fig.tight_layout()
-#     plt.show()
-
-# # plot difference all together
-# with plt.style.context('seaborn-notebook'):
-#     plt.rcParams['figure.dpi'] = 300
-#     plt.rcParams['savefig.dpi'] = 300
-#     fig, ax = plt.subplots(1,1, figsize=(8, 4))
-#     custom_palette = {'L': 'cyan', 'R': 'pink'}
-#     label_list = ['Early Auditory', 'Auditory Association','Orbital and Polar Frontal','Insular and Frontal Opercular','Inferior Frontal','DorsoLateral Prefrontal']
-    
-#     sns.violinplot(data=roi_df_melt_diff, x="Cortex", y="value", hue="Hemisphere", inner='point', ax=ax, width=0.5, linewidth=1, palette=custom_palette, cut=0)
-#     ax.tick_params(labelsize=6)   
-#     ax.legend(fontsize=5, framealpha=1,loc='lower center')
-#     ax.set_ylabel('absolute weight difference (%)',fontsize=5)
-#     ax.set_xlabel('')
-#     ax.axhline(0, color='k', linestyle='--',zorder=5, lw=0.75)
-#     # temp_ax.set_ylim(7.3,10.7)
-#     # temp_ax.set_yticks([7.5,8.5,9.5,10.5])
-#     ax.set_title(temp_label,fontsize=7)
 
 # %% testing weights
 
