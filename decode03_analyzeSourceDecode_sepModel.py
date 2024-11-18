@@ -383,7 +383,6 @@ def plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, width_threshol
 # model_sel = 'samePitch' 
 # fband = 'delta'
 
-# threshold = t.isf(0.05/2,len(subCode)-1)
 threshold = 2.5
 width_threshold=5
 
@@ -461,8 +460,6 @@ for t_model, z in zip(t_loc, zorder):
 
 ax1.set_xticks(x1)
 ax1.set_xticklabels(['1/3', '2/3', '1', '4/3', '5/3', '2', '7/3'])
-# ax1.set_yticks(y)
-# ax1.set_yticklabels(fontsize=6)
 ax1.tick_params(labelsize=6)
  
 # Show the plot
@@ -470,13 +467,10 @@ ax1.tick_params(bottom=True, top=True, left=True, right=True)
 ax1.set_xlim(0.25, 2.65)
 ax1.set_xlabel('Pitch height difference (# of octaves)',fontsize=8)
 ax1.set_ylabel('Neural dissimilarity (ROC-AUC)',fontsize=8)
-# legend1=plt.legend(title='model at time (s)', fontsize=8, title_fontsize=6)
 ax1.legend(handles=legend_elements, loc='best', fontsize=6, title='Pitch chroma equivalence', title_fontsize=6)
-# plt.gca().add_artist(legend1)
 
 
 pair_count = list(chain.from_iterable([[x1[n]]*(7-n) for n in range(len(x1))]))
-# ax2.grid(axis='y',alpha=0.5, ls=':', lw=0.5)
 ax2.bar(x1, [7,6,5,4,3,2,1], width=0.2, color='pink')
 ax2.set_xticks(x1)
 ax2.set_xlim(0.25, 2.65)
@@ -542,14 +536,10 @@ def plot_tempGen(fdr_bool):
     )
     contour = ax.contour(
         np.where(mask2D, np.nan, p_val),
-        # result.pvalue * np.logical_not(mask2D),
-        # result.statistic>2.5,
-        # tempGen_sig_plot>0,
         levels=levels,
         origin="lower",
         colors=['k','dimgrey','silver'],
         linewidths=1,
-        # linestyles=['solid','dotted'],
         extent=[timeAxis[0], timeAxis[-1], timeAxis[0], timeAxis[-1]],
         )
     ax.axhline(0.0, color="k",lw=1,ls=':')
@@ -559,7 +549,6 @@ def plot_tempGen(fdr_bool):
     ax.set_ylabel('Training time (s)')
     h,l = contour.legend_elements('p')
     ax.legend(h,l,loc='lower right',title=legend_title,fontsize=8,title_fontsize=8)
-    # ax.set_title("Generalization across time and condition", fontweight="bold")
     fig.colorbar(im, ax=ax, label="Mean performance (ROC-AUC)")
     plt.tight_layout()
     plt.show()
@@ -569,81 +558,6 @@ plot_tempGen(fdr_bool=True)
 if save_fig:
     plt.savefig('fig/tempGen_'+fband+'.fit', format='png', dpi=600)
 
-# %% multidimemsional scaling
-
-from sklearn.manifold import MDS
-
-
-def plot_mds(distances, t_model):
-
-    distances -= min(distances)
-    distance_matrix = np.zeros((8,8,))
-    
-    for n1 in range(8):
-        for n2 in range(8):
-            if n1 != n2:
-                distance_matrix[n1, n2] = distances[abs(n1-n2)]
-
-    # Create an MDS object for 2D scaling
-    mds = MDS(n_components=2, dissimilarity='precomputed', random_state=91) # random_state=91 is good!
-    
-    # Fit the model and transform the distance matrix into 3D coordinates
-    coordinates = mds.fit_transform(distance_matrix)
-    
-    
-    import matplotlib.pyplot as plt
-    # from mpl_toolkits.mplot3d import Axes3D
-    
-    # Create a 2D scatter plot
-    plt.style.use('seaborn-notebook')
-
-    fig = plt.figure(figsize=(5, 5))
-    ax = fig.add_subplot(111)
-    
-    # Unpack coordinates for easier plotting
-    x, y = coordinates[:, 0], coordinates[:, 1]
-    
-    # Plot the points
-    ax.scatter(x, y, c=[1,2,3,1,2,3,1,2])
-    
-    # Annotate points with their index
-    for i, p_name in zip(range(len(x)), ["G#6", "C7", "E7", "G#7", "C8", "E8", "G#8", "C9"]):
-        ax.text(x[i], y[i], p_name)
-    
-    # Set labels for axes
-    ax.set_xlim([-0.03,0.03])
-    ax.set_ylim([-0.03,0.03])
-    ax.set_title("Time: " +str(t_model)+" (s)")
-    
-    # Show the plot
-    plt.show()
-
-
-df_fe = pd.read_csv('sourceSTC20230711_ico3_freqBands_shuffled/decodeSource20230711_RidgeCV/auditory_frontal_alpha10^(-2)-10^3_41grid_correctPitchCoefPattern/permutation_MLM_time_sepModels_reFull_spearmanCoch_17subjs/delta_samePitch_orig-fixedeffect-time.csv',
-                    index_col=0)
-
-x1 = [1/3, 2/3, 1, 4/3, 5/3, 2, 7/3]
-x2 = [0, 0, 1, 0, 0, 1, 0]
-t_loc = np.linspace(0, 0.5, 6)
-t_loc = np.linspace(0, 0.5, 51) # for animation use only
-
-for t_model in t_loc:
-    t_model = round(t_model,3)
-    y = []
-    coefs = df_fe.loc[t_model]
-    y.append(coefs['Intercept'])
-    if 0.3 <= t_model <=0.32:
-        for n in range(len(x1)):
-            y.append(coefs['Intercept'] + coefs['pitchDist']*x1[n] + coefs['samePitch[T.True]']*x2[n] + coefs['pitchDist:samePitch[T.True]']*x1[n]*x2[n])
-    else:
-        for n in range(len(x1)):
-            y.append(coefs['Intercept'] + coefs['pitchDist']*x1[n])
-    
-    distances = y
-    plot_mds(distances, t_model)
-    plt.savefig('time'+str(int(t_model*1000))+'ms.png', format='png', dpi=600)
-
-plt.close('all')
 # %% 3D multidimemsional scaling
 
 import matplotlib.pyplot as plt
@@ -663,7 +577,7 @@ def plot_manual_3Dmds(distances, t_model):
                 distance_matrix[n1, n2] = distances[abs(n1-n2)]
 
     if 0.3 <= t_model <=0.32:
-        mds = MDS(n_components=3, dissimilarity='precomputed', random_state=91) # random_state=6 is good!
+        mds = MDS(n_components=3, dissimilarity='precomputed', random_state=91)
         coordinates = mds.fit_transform(distance_matrix)
     
         
@@ -698,39 +612,31 @@ def plot_manual_3Dmds(distances, t_model):
     fig = plt.figure(figsize=(4, 5))
     ax = fig.add_subplot(111, projection='3d')
     ax.set_box_aspect([1, 1, 1.7])
-    # ax.set_box_aspect([1, 1, 1])
-    
+
     # Plot the points
     ax.scatter(x, y, z, c=[1,2,3,1,2,3,1,2], label='Points')
     
     # Annotate points with their index
     for i, p_name in zip(range(len(x)), ["G#6", "C7", "E7", "G#7", "C8", "E8", "G#8", "C9"]):
-        ax.text(x[i], y[i], z[i], p_name, fontsize=8)
+        ax.text(x[i], y[i], z[i], p_name, fontsize=13)
     
     # Connect the points with a line
     ax.plot(x, y, z, color='r', label='Line')
     
     # Add labels
-    # ax.set_xlabel('X axis')
-    # ax.set_ylabel('Y axis')
-    # ax.set_zlabel('Z axis')
-    ax.set_xlim([-3,3])
-    ax.set_ylim([-3,3])
-    ax.set_zlim([0,60])
-    ax.set_xticks([-3,-1.5,0,1.5,3])
-    ax.set_yticks([-3,-1.5,0,1.5,3])
-    ax.set_zticks([0,10,20,30,40,50,60])
-    ax.set_xticklabels([-3,-1.5,0,1.5,3],verticalalignment='baseline')
-    ax.set_yticklabels([-3,-1.5,0,1.5,3],verticalalignment='baseline',horizontalalignment='left')
-    ax.set_zticklabels([0,10,20,30,40,50,60])
-    # plt.gca().yaxis.set_major_formatter(plt.ScalarFormatter(useMathText=True))
-    # plt.gca().xaxis.set_major_formatter(plt.ScalarFormatter(useMathText=True))
 
-    # plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-    # plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+    ax.set_xlim([-2,2])
+    ax.set_ylim([-2,2])
+    ax.set_zlim([0,60])
+    ax.set_xticks([-2,-1,0,1,2])
+    ax.set_yticks([-2,-1,0,1,2])
+    ax.set_zticks([0,10,20,30,40,50,60])
+    ax.set_xticklabels([-2,-1,0,1,2],verticalalignment='baseline')
+    ax.set_yticklabels([-2,-1,0,1,2],verticalalignment='baseline',horizontalalignment='left')
+    ax.set_zticklabels([0,10,20,30,40,50,60])
 
     ax.tick_params(axis='both', which='major', labelsize=8, pad=0.1)
-    ax.set_title("Time: " +str(t_model)+" (s)")
+    ax.set_title("Time: " +str(t_model)+" (s)", pad=-20)
     
     
     # # Show the legend
@@ -739,7 +645,7 @@ def plot_manual_3Dmds(distances, t_model):
     # ax.view_init(10, -40)
     ax.view_init(5, 146)
     
-    
+    plt.tight_layout()
     # Show the plot
     plt.show()
 
