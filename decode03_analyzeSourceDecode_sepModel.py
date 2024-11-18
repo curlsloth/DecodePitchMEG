@@ -203,16 +203,6 @@ if save_fig:
 # %% write a bootstrapping method
 # read the files produced by decode02_HPC_pitchMLM_permutation.py
 
-   
-# def cal_clu_stats(data, threshold):
-#     from scipy.ndimage import label
-#     import numpy as np
-#     mask_tt = np.abs(data)>=threshold
-#     labeled_array, num_features = label(mask_tt)
-#     temp_clus = []
-#     for mask_n in range(1,num_features+1):
-#         temp_clus.append(np.sum(data[labeled_array==mask_n]))
-#     return temp_clus, labeled_array
 
 def cal_clu_stats(data, threshold, width_threshold):
     from scipy.ndimage import label
@@ -312,12 +302,7 @@ def plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, width_threshol
         ax[ax_n].set_xlim(0,0.5)
         ax[ax_n].set_ylabel('t-value', fontsize=8)
         plt.setp(ax[ax_n].get_xticklabels(), visible=False)
-        # if ax_n==2:
-        #     ax[ax_n].set_xlabel('time (s)', fontsize=8)
-        #     ax[ax_n].set_ylabel('t-value', fontsize=8)
-        # else:
-        #     plt.setp(ax[ax_n].get_xticklabels(), visible=False)
-            
+
         
         # add area and text of p-value
         for n in range(len(clus_stats_orig_list)):
@@ -340,8 +325,6 @@ def plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, width_threshol
         
         ax_n+=1
         
-        # line_thresh = ax.axhline(y = area_thresh, color = '0.8', linestyle = '--', label='cluster threshold')
-        # ax.legend([area_clus], ['significant cluster'])
         
         
         if ax_n==3:
@@ -357,19 +340,15 @@ def plot_mlm_time(col_name_list, df_tvalues, dir_list, threshold, width_threshol
                 y_c = coch_r2_df['R2_c']
             
             # make plot
-            # ax[ax_n].set_title('noise ceiling', fontdict=({'size':8, 'style':'oblique'}), loc='left')
             ax[ax_n].spines['bottom'].set_position(('data', 0))
             ax[ax_n].spines['top'].set_visible(False)
             ax[ax_n].spines['right'].set_visible(False)
-            # ax[ax_n].grid(visible=True, axis='y', linestyle=':', linewidth=0.5, which='major')
             ax[ax_n].plot(samePitch_r2_df.index, y_m, label = "marginal", color='black', linewidth=1)
             ax[ax_n].plot(samePitch_r2_df.index, y_c, label = "conditional", color='tab:gray', linewidth=1)
-            ax[ax_n].legend(fontsize=4, bbox_to_anchor=(0.5, 1.5), loc='upper center', ncol=2)
-            # ax[ax_n].legend(fontsize=4, ncol=2)
+            ax[ax_n].legend(fontsize=6, bbox_to_anchor=(0.5, 2), loc='upper center', ncol=2)
             ax[ax_n].tick_params(labelsize=6)
             ax[ax_n].set_xticks([0.1,0.2,0.3,0.4,0.5])
             ax[ax_n].set_xlim(0,0.5)
-            # ax[ax_n].set_yticks([0.15,0.3])
             ax[ax_n].set_ylabel("$R^2$", fontsize=8)
             ax[ax_n].set_xlabel('time (s)', fontsize=8)
             
@@ -673,7 +652,7 @@ for t_model in t_loc:
     
     distances = np.array(y)
     plot_manual_3Dmds(distances, t_model)
-    plt.savefig('3D_time'+str(int(t_model*1000))+'ms.png', format='png', dpi=600)
+    plt.savefig('fig/3D/3D_time'+str(int(t_model*1000))+'ms.png', format='png', dpi=600)
 
 plt.close('all')
 
