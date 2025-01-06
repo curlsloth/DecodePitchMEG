@@ -11,6 +11,8 @@ In this study, I used a machine learning model to "decode" how the brain represe
 
 Interestingly, the brain usually represents pitches in a mostly linear structure, similar to the layout of a piano keyboard from left to right. However, about 0.3 seconds after hearing a sound, the brain briefly represents the sound in a helix-like structure. This helix reflects the concept of octave equivalence—the idea that pitches separated by an octave (e.g., the repeating white and black keys on a piano) are perceived as inherently similar.
 
+![keyboard](keyboard_octave.png)
+
 ## Data  
 
 The processed data (the folders `pyenv`, `save_fif`, and `sourceSTC20230711_ico3_freqBands_shuffled`) can be downloaded from the [OSF project page](https://osf.io/nhcgj/).  
