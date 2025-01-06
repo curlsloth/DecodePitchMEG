@@ -6,6 +6,6 @@ __pycache__/
 /save_fif/
 /sourceSTC20230711_ico3_freqBands_shuffled/
 /fig/
-processed_data.zip
+processed_data*
 .DS_Store
 **/.DS_Store

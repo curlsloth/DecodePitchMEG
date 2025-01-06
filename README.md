@@ -1,5 +1,12 @@
 # Decode Pitch MEG
-Research on using machine learning to decode the MEG neural representation of pitch.
+
+This repo contains the Python script of my paper: Chang, A., Poeppel, D., & Teng, X. (accepted). Temporally dissociable neural representations of pitch height and chroma. *Journal of Neuroscience*
+
+In this study, I used a machine learning model to "decode" how the brain represents musical pitches while a person listens to them during a magnetoencephalography (MEG) scan (essentially a form of "mind-reading"). The model not only identified the pitch being heard but also reconstructed how the brain represents the similarity between different pitches and how this representation changes over time.
+
+Interestingly, the brain usually represents pitches in a mostly linear structure, similar to the layout of a piano keyboard from left to right. However, about 0.3 seconds after hearing a sound, the brain briefly represents the sound in a helix-like structure. This helix reflects the concept of octave equivalence—the idea that pitches separated by an octave (e.g., the repeating white and black keys on a piano) are perceived as inherently similar.
+
+![](pitch_helix_neural_reconstruction.gif)
 
 This work is licensed under a [Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).
 
