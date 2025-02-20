@@ -2,7 +2,7 @@
 
 This repo contains the Python script of my paper: 
 
-- Chang, A., Poeppel, D., & Teng, X. (2025). Temporally dissociable neural representations of pitch height and chroma. *Journal of Neuroscience* [Links to [paper](https://doi.org/10.1523/JNEUROSCI.1567-24.2024) and [preprint](https://doi.org/10.31234/osf.io/cnh5w)]
+- Chang, A., Poeppel, D., & Teng, X. (2025). Temporally dissociable neural representations of pitch height and chroma. *Journal of Neuroscience*, 45 (8) e1567242024 [Links to [paper](https://doi.org/10.1523/JNEUROSCI.1567-24.2024) and [preprint](https://doi.org/10.31234/osf.io/cnh5w)]
 
 ### My machine learning model reconstructs how the brain dynamically represents musical pitches. Pitches that are closer together in space are represented as more similar in the brain at that moment. ####
 ![pitch_helix](pitch_helix_neural_reconstruction.gif)
